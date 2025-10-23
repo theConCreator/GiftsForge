@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gifts Forge</title>
+  <style>
+    :root {
+      --bg: #000;
+      --accent: #ff7b00;
+      --text: #fff;
+      --card-bg: #111;
+      --card-border: #ff7b00aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 10px 0;
+      background: #111;
+      border-bottom: 2px solid var(--accent);
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .forge-area {
+      text-align: center;
+      max-width: 400px;
+      border: 2px solid var(--card-border);
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 0 10px #ff7b0033;
+    }
+
+    .forge-area button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .forge-area button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .forge-items {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .item {
+      width: 70px;
+      height: 70px;
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .item.selected {
+      background: var(--accent);
+      color: #000;
+      transform: scale(1.1);
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-around;
+      border-top: 2px solid var(--accent);
+      background: #111;
+      padding: 10px 0;
+    }
+
+    footer button {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    footer button.active {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .inventory {
+      max-width: 500px;
+      width: 100%;
+      border: 2px solid var(--card-border);
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 15px;
+    }
+
+    .inventory h2 {
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .inventory-items {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .inv-item {
+      width: 70px;
+      height: 70px;
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+    }
+
+    .result {
+      margin-top: 15px;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    @keyframes forgeGlow {
+      0%, 100% { box-shadow: 0 0 10px #ff7b00; }
+      50% { box-shadow: 0 0 25px #ff7b00; }
+    }
+
+    .forging {
+      animation: forgeGlow 1s infinite;
+    }
+  </style>
+</head>
+<body>
+  <header>🔥 Gifts Forge 🔥</header>
+
+  <main>
+    <!-- Forge tab -->
+    <div id="forgeTab" class="forge-area">
+      <h2>Кузница</h2>
+      <p>Выбери от 2 до 6 элементов (хотя бы один подарок)</p>
+      <div class="forge-items" id="forgeItems"></div>
+      <button id="forgeButton">Ковать!</button>
+      <div class="result" id="forgeResult"></div>
+    </div>
+
+    <!-- Inventory tab -->
+    <div id="inventoryTab" class="inventory hidden">
+      <h2>Инвентарь</h2>
+      <div class="inventory-items" id="inventoryItems"></div>
+    </div>
+  </main>
+
+  <footer>
+    <button id="navForge" class="active">🔨 Forge</button>
+    <button id="navInventory">🎁 Inventory</button>
+  </footer>
+
+  <script>
+    const forgeItemsContainer = document.getElementById('forgeItems');
+    const inventoryItemsContainer = document.getElementById('inventoryItems');
+    const forgeButton = document.getElementById('forgeButton');
+    const forgeResult = document.getElementById('forgeResult');
+    const forgeTab = document.getElementById('forgeTab');
+    const inventoryTab = document.getElementById('inventoryTab');
+    const navForge = document.getElementById('navForge');
+    const navInventory = document.getElementById('navInventory');
+
+    // Пример предметов (подарки, звёзды, модификаторы)
+    const items = [
+      { name: '🎁 Gift A', type: 'gift' },
+      { name: '🎁 Gift B', type: 'gift' },
+      { name: '⭐ 50 Stars', type: 'stars' },
+      { name: '💎 Modifier X', type: 'mod' },
+      { name: '🎁 Gift C', type: 'gift' },
+      { name: '🔥 Modifier Fire', type: 'mod' }
+    ];
+
+    let selectedItems = [];
+    let inventory = [];
+
+    // Рендер предметов
+    function renderItems() {
+      forgeItemsContainer.innerHTML = '';
+      items.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = item.name;
+        div.onclick = () => toggleSelect(i, div);
+        forgeItemsContainer.appendChild(div);
+      });
+    }
+
+    function toggleSelect(i, div) {
+      const idx = selectedItems.indexOf(i);
+      if (idx > -1) {
+        selectedItems.splice(idx, 1);
+        div.classList.remove('selected');
+      } else {
+        if (selectedItems.length < 6) {
+          selectedItems.push(i);
+          div.classList.add('selected');
+        }
+      }
+    }
+
+    function hasGiftSelected() {
+      return selectedItems.some(i => items[i].type === 'gift');
+    }
+
+    forgeButton.onclick = () => {
+      if (selectedItems.length < 2 || !hasGiftSelected()) {
+        forgeResult.textContent = '❗ Нужно выбрать минимум 2 элемента, включая подарок!';
+        return;
+      }
+
+      forgeButton.disabled = true;
+      forgeResult.textContent = '⚙️ Ковка идёт...';
+      forgeButton.classList.add('forging');
+
+      setTimeout(() => {
+        const success = Math.random() < 0.93; // 93% средний шанс
+        forgeButton.disabled = false;
+        forgeButton.classList.remove('forging');
+
+        if (success) {
+          const newGift = {
+            name: `🎁 Gift ${String.fromCharCode(65 + inventory.length)}`,
+            type: 'gift'
+          };
+          inventory.push(newGift);
+          renderInventory();
+          forgeResult.textContent = `✅ Успех! Получен новый подарок: ${newGift.name}`;
+        } else {
+          forgeResult.textContent = '💥 Неудача! Материалы сгорели.';
+        }
+
+        selectedItems = [];
+        renderItems();
+      }, 1500);
+    };
+
+    function renderInventory() {
+      inventoryItemsContainer.innerHTML = '';
+      if (inventory.length === 0) {
+        inventoryItemsContainer.innerHTML = '<p>Пусто...</p>';
+        return;
+      }
+      inventory.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'inv-item';
+        div.textContent = item.name;
+        inventoryItemsContainer.appendChild(div);
+      });
+    }
+
+    navForge.onclick = () => {
+      navForge.classList.add('active');
+      navInventory.classList.remove('active');
+      forgeTab.classList.remove('hidden');
+      inventoryTab.classList.add('hidden');
+    };
+
+    navInventory.onclick = () => {
+      navInventory.classList.add('active');
+      navForge.classList.remove('active');
+      inventoryTab.classList.remove('hidden');
+      forgeTab.classList.add('hidden');
+    };
+
+    renderItems();
+  </script>
+</body>
+</html>
