@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
 body{margin:0;background-color:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;}
-header{text-align:center;padding:12px 0;background:#111;border-bottom:2px solid var(--accent);font-size:1.4rem;letter-spacing:1px;}
+header{text-align:center;padding:12px 0;background:#111;border-bottom:2px solid var(--accent);font-size:1.4rem;letter-spacing:1px;position:relative;}
 main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;}
 .hidden{display:none;}
 .forge-area,.inventory,.shop{ text-align:center; max-width:700px; width:100%; border:2px solid var(--card-border); background:var(--card-bg); border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:0 0 10px #ff7b0033;}
@@ -122,16 +122,16 @@ const giftsList = [
     {name:"Pet Snake", ton:1.93},{name:"Homemade Cake", ton:1.91},{name:"Candy Cane", ton:1.89},{name:"Clover Pin", ton:1.88},
     {name:"Whip Cupcake", ton:1.8},{name:"Xmas Stocking", ton:1.77},{name:"Snake Box", ton:1.72},{name:"Lunar Snake", ton:1.7},
     {name:"Lol Pop", ton:1.67},{name:"B-Day Candle", ton:1.61},{name:"Desk Calendar", ton:1.5}
-  ];
-const modsBase=[
+];
+const modsBase = [
   {name:'💎 +10% к цене', type:'plus10', cost:800},
   {name:'🎲 ±30% к цене', type:'rand30', cost:1000},
   {name:'🔁 Вернуть 1 подарок', type:'return1', cost:1200},
   {name:'✨ Сохранить модификатор', type:'keepmod', cost:900}
 ];
 
-let inventory = gifts.slice(0,10); // начальный инвентарь
-let selectedComponents=[null,null,null,null,null,null];
+let inventory = gifts.slice(0,10);
+let selectedComponents = [null,null,null,null,null,null];
 let forgeCards = document.querySelectorAll('.forge-card');
 let activeCardIndex = null;
 let stars = 10000;
@@ -227,10 +227,9 @@ forgeButton.onclick=()=>{
   setTimeout(()=>{
     forgeButton.disabled=false;
     forgeButton.classList.remove('forcing');
-    const success=Math.random()<0.85; // шанс успеха
+    const success=Math.random()<0.85;
     if(success){
-      // создаём новый подарок
-      let factor = 0.65 + Math.random()*0.1; // 65-75%
+      let factor = 0.65 + Math.random()*0.1;
       let totalPrice = components.reduce((a,b)=>a+b.ton,0) * factor;
       const newGift = {name:'🎁 Новый подарок', ton: totalPrice};
       inventory.push(newGift);
