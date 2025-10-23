@@ -1,223 +1,87 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gifts Forge — Demo</title>
-  <meta name="description" content="Gifts Forge — демо кузницы подарков (локально, без транзакций)" />
-  <style>
-    /* ==========================
-       Стиль (тёмная тема + оранжевые акценты)
-       ========================== */
-    :root{
-      --bg: #060606;
-      --panel: #0f0f10;
-      --card: #171717;
-      --accent: #ff7b00;
-      --accent-weak: #ff7b0055;
-      --muted: #bdbdbd;
-      --success: #4caf50;
-      --danger: #e53935;
-      --glass: rgba(255,255,255,0.02);
-    }
-    *{box-sizing:border-box;font-family:Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),#070707);color:#fff;min-height:100vh;display:flex;flex-direction:column;}
-    header{padding:14px;border-bottom:2px solid var(--accent);background:linear-gradient(90deg,rgba(255,123,0,0.03),transparent);display:flex;align-items:center;justify-content:space-between;}
-    header h1{margin:0;font-size:18px;letter-spacing:1px;}
-    header .balance{font-size:14px;color:var(--muted);}
-    main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;}
-    .container{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr 360px;gap:20px;}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gifts Forge</title>
+<style>
+  :root {
+    --bg:#000;
+    --accent:#ff7b00;
+    --text:#fff;
+    --card:#111;
+    --border:#ff7b00aa;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+  body{margin:0;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:2px solid var(--accent);background:#111;font-size:1.2rem}
+  header .balance{font-size:1rem}
+  main{flex:1;display:flex;justify-content:center;align-items:center;padding:20px}
+  footer{display:flex;justify-content:space-around;border-top:2px solid var(--accent);background:#111;padding:10px 0}
+  footer button{background:none;border:none;color:var(--text);font-size:1rem;cursor:pointer}
+  footer button.active{color:var(--accent);font-weight:bold}
 
-    /* Левая панель — кузница */
-    .forge-panel{background:linear-gradient(180deg,var(--panel),#121212);padding:18px;border-radius:12px;border:1px solid var(--accent-weak);box-shadow:0 10px 30px rgba(0,0,0,0.6);}
-    .panel-title{display:flex;align-items:center;justify-content:space-between;}
-    .panel-title h2{margin:0;color:var(--accent);}
-    .desc{color:var(--muted);font-size:13px;margin-top:8px;}
+  /* Forge */
+  .forge-area{max-width:480px;width:100%;text-align:center;background:var(--card);border:2px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 0 10px #ff7b0044}
+  .forge-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+  .slot{height:80px;border:2px dashed var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+  .slot:hover{background:#222}
+  .slot.filled{border-style:solid;background:#222}
+  .forge-btn{margin-top:15px;background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:1.1rem;cursor:pointer;transition:.2s}
+  .forge-btn:hover{transform:scale(1.05)}
+  .forge-result{margin-top:10px;min-height:1.5em}
+  @keyframes forgeGlow{0%,100%{box-shadow:0 0 10px #ff7b00}50%{box-shadow:0 0 25px #ff7b00}}
+  .forging{animation:forgeGlow 1s infinite}
 
-    .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
-    .card{
-      background:var(--card);border-radius:10px;height:110px;border:2px dashed var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .12s;
-      padding:8px;text-align:center;font-size:13px;
-    }
-    .card:hover{transform:translateY(-4px);}
-    .card.has{border-style:solid;background:linear-gradient(180deg,#2a2a2a,#1f1f1f);}
-    .card .title{font-weight:600;font-size:13px;}
-    .card .sub{font-size:12px;color:var(--muted);margin-top:6px;}
-
-    /* Forge controls */
-    .forge-controls{display:flex;align-items:center;gap:12px;margin-top:16px;}
-    .btn{background:var(--accent);color:#000;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:600;box-shadow:0 6px 18px #ff7b0033;}
-    .btn:disabled{opacity:0.6;cursor:not-allowed;}
-    .small-btn{background:transparent;border:1px solid var(--accent);padding:8px;border-radius:10px;color:var(--accent);cursor:pointer;}
-
-    .result{margin-top:12px;padding:10px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.02);min-height:48px;color:var(--muted);}
-
-    /* Правая панель — инвентарь и магазин */
-    .side-panel{display:flex;flex-direction:column;gap:16px;}
-    .card-box{background:linear-gradient(180deg,#0f0f10,#161616);padding:14px;border-radius:12px;border:1px solid var(--accent-weak);}
-
-    .inv-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;max-height:340px;overflow:auto;padding-right:6px;}
-    .inv-item{width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;background:#121212;border:1px solid rgba(255,255,255,0.02);font-size:13px;}
-    .inv-item .left{display:flex;gap:10px;align-items:center;}
-    .badge{padding:6px 8px;border-radius:8px;background:rgba(255,123,0,0.08);color:var(--accent);font-weight:600;}
-
-    /* Shop layout */
-    .shop-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;}
-    .shop-item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;background:#121212;border:1px solid rgba(255,255,255,0.02);}
-    .muted-small{font-size:12px;color:var(--muted);}
-
-    /* Modal */
-    .modal{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;visibility:hidden;opacity:0;transition:opacity .15s,visibility .15s;}
-    .modal.show{visibility:visible;opacity:1;}
-    .modal-card{width:94%;max-width:720px;background:#0e0e0e;border-radius:12px;padding:16px;border:1px solid var(--accent-weak);max-height:86vh;overflow:auto;}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;}
-    .search{width:100%;padding:10px;border-radius:10px;background:#121212;border:1px solid rgba(255,255,255,0.03);color:#fff;margin-top:10px;}
-    .modal-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
-    .modal-row{padding:10px;border-radius:8px;background:#121212;border:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-    .modal-row:hover{background:linear-gradient(90deg,#222,#1a1a1a);}
-
-    /* forging animation overlay */
-    .forge-overlay{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10000;pointer-events:none;opacity:0;transition:opacity .12s;}
-    .forge-overlay.show{opacity:1;pointer-events:all;}
-    .forge-anim{width:420px;height:220px;border-radius:12px;background:linear-gradient(90deg,#111,#080808);display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--accent);box-shadow:0 30px 80px rgba(0,0,0,0.7);}
-    .sparks{width:100%;height:40px;position:relative;overflow:hidden;}
-    .spark{position:absolute;width:6px;height:6px;background:var(--accent);border-radius:50%;opacity:0;animation:fly 900ms linear infinite;}
-    @keyframes fly{
-      0%{transform:translateY(40px) scale(.3);opacity:0}
-      20%{opacity:1}
-      50%{transform:translateY(-30px) scale(1.0);opacity:1}
-      100%{transform:translateY(-80px) scale(.2);opacity:0}
-    }
-    .forge-center{margin-top:6px;text-align:center;}
-    .forge-center h3{margin:6px 0;color:var(--accent);}
-
-    /* Footer */
-    footer{padding:12px;border-top:1px solid rgba(255,255,255,0.03);text-align:center;color:var(--muted);font-size:13px;}
-    /* responsive */
-    @media(max-width:980px){
-      .container{grid-template-columns:1fr; padding-bottom:60px;}
-      .side-panel{order:2;}
-    }
-  </style>
+  /* Inventory */
+  .inventory,.shop{max-width:500px;width:100%;background:var(--card);border:2px solid var(--border);border-radius:16px;padding:20px;text-align:center}
+  .inv-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+  .inv-item{width:70px;height:70px;border:2px solid var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+  .inv-item:hover::after{content:'Продать';position:absolute;bottom:-20px;font-size:.7rem;color:var(--accent)}
+  .shop-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+  .shop-item{width:130px;padding:10px;border:2px solid var(--accent);border-radius:10px;background:#222;cursor:pointer}
+  .shop-item:hover{box-shadow:0 0 10px var(--accent)}
+</style>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <h1>🔥 Gifts Forge (Demo)</h1>
-    <div class="balance">⭐ <span id="starBalance">10000</span> &nbsp; • &nbsp; Инвентарь: <span id="invCount">0</span></div>
-  </header>
+<header>
+  <div>🔥 Gifts Forge</div>
+  <div class="balance">⭐ <span id="stars">10000</span></div>
+</header>
 
-  <!-- Main -->
-  <main>
-    <div class="container">
-      <!-- Left: Forge panel -->
-      <section class="forge-panel">
-        <div class="panel-title">
-          <h2>Кузница</h2>
-          <div class="muted-small">Выбери 2–6 компонентов, минимум один подарок</div>
-        </div>
-        <div class="desc">Кликни по любой из 6 карточек, чтобы выбрать компонент из инвентаря, добавить звёзды или модификатор. Затем нажми <strong>Ковать!</strong></div>
-
-        <!-- 6 cards -->
-        <div class="cards-grid" id="cardsGrid" aria-label="components">
-          <!-- JS заполнит эти карточки -->
-        </div>
-
-        <!-- Controls -->
-        <div class="forge-controls">
-          <button class="btn" id="forgeBtn">Ковать!</button>
-          <button class="small-btn" id="clearBtn">Сбросить</button>
-          <button class="small-btn" id="autoFillBtn">Авто-наполнить (для теста)</button>
-        </div>
-
-        <div class="result" id="forgeResult">Результат отобразится здесь.</div>
-      </section>
-
-      <!-- Right: Inventory + Shop -->
-      <aside class="side-panel">
-        <div class="card-box">
-          <h3 style="margin:0;color:var(--accent)">Инвентарь</h3>
-          <div class="muted-small" style="margin-top:6px">Нажми на предмет в инвентаре, чтобы продать его за его стоимость (TON → ⭐).</div>
-          <div class="inv-list" id="inventoryList" style="margin-top:10px"></div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="margin:0;color:var(--accent)">Модификаторы (магазин)</h3>
-          <div class="muted-small" style="margin-top:6px">В магазине показаны доступные модификаторы. Цена — в звёздах. Перезарядка 48ч (в демо — в памяти).</div>
-          <div class="shop-grid" id="shopGrid"></div>
-        </div>
-      </aside>
-    </div>
-  </main>
-
-  <!-- Modal: choose component -->
-  <div class="modal" id="modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>Выберите компонент</h3>
-        <div>
-          <button class="small-btn" id="closeModal">Закрыть</button>
-        </div>
-      </div>
-
-      <input id="modalSearch" class="search" placeholder="Поиск по названию (инвентарь)..." />
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="small-btn" id="tabGifts">Только подарки</button>
-        <button class="small-btn" id="tabModifiers">Модификаторы</button>
-        <button class="small-btn" id="tabStars">Добавить звёзды</button>
-        <div style="flex:1"></div>
-        <div class="muted-small">Инвентарь: <span id="modalInvCount">0</span></div>
-      </div>
-
-      <div class="modal-list" id="modalList"></div>
-    </div>
+<main>
+  <!-- Магазин -->
+  <div id="shopTab" class="shop hidden">
+    <h2>🛒 Магазин модификаторов</h2>
+    <div class="shop-grid" id="shopItems"></div>
   </div>
 
-  <!-- Craft animation overlay -->
-  <div class="forge-overlay" id="forgeOverlay">
-    <div class="forge-anim">
-      <div class="sparks" id="sparksContainer"></div>
-      <div class="forge-center">
-        <h3>Ковка...</h3>
-        <div class="muted-small" id="forgeAnimText">Плавим материалы</div>
-      </div>
-    </div>
+  <!-- Кузница -->
+  <div id="forgeTab" class="forge-area">
+    <h2>Кузница</h2>
+    <p>Добавь до 6 элементов</p>
+    <div class="forge-slots" id="forgeSlots"></div>
+    <button class="forge-btn" id="forgeBtn">Ковать!</button>
+    <div class="forge-result" id="forgeResult"></div>
   </div>
 
-  <footer>Gifts Forge — demo (локально). Все операции — в браузере, без реальных транзакций.</footer>
+  <!-- Инвентарь -->
+  <div id="inventoryTab" class="inventory hidden">
+    <h2>🎁 Инвентарь</h2>
+    <div class="inv-grid" id="inventoryGrid"></div>
+  </div>
+</main>
 
-  <script>
-  /************************************************************************
-   * Gifts Forge — Demo
-   * Полностью локальная версия (без сохранения).
-   *
-   * Особенности:
-   * - 6 слотов компонентов.
-   * - Модальное окно выбора компонента (поиск).
-   * - Добавление звёзд в слот (списывается с баланса).
-   * - Магазин модификаторов (3 шт. каждого типа), цена 500-1500⭐.
-   * - Перезарядка магазина 48 часов (в памяти).
-   * - Ковка 2 секунды с анимацией.
-   * - Баланс звёзд старт 10000.
-   * - Инвентарь стартует с 10 подарков.
-   * - Продажа подарков (TON → stars, 1 TON = 142⭐).
-   * - Подгрузка /gifts/<name>.json при рендере: если есть поле display — покажем его.
-   *
-   * Замечания:
-   * - Данные НЕ сохраняются между перезагрузками (по желанию).
-   * - Этот файл — демо; для реальных транзакций нужна серверная логика и интеграция с TON/Telegram.
-   ************************************************************************/
+<footer>
+  <button id="navShop">🛒 Магазин</button>
+  <button id="navForge" class="active">🔨 Кузница</button>
+  <button id="navInventory">🎁 Инвентарь</button>
+</footer>
 
-  // ---------- Конфигурация ----------
-  const TON_TO_STARS = 142;                 // 1 TON = 142 stars
-  const STARTING_STARS = 10000;             // стартовый баланс
-  const FORGE_DURATION_MS = 2000;           // 2 секунды ковки
-  const SHOP_COOLDOWN_MS = 48 * 60 * 60 * 1000; // 48 часов (в демо — в памяти)
-  const SHOP_QTY_PER_MOD = 3;               // 3 штуки каждого модификатора
-
-  // ---------- Список реальных подарков (с TON ценами) ----------
-  // (взято из твоего списка)
-  const giftsList = [
+<script>
+/* ====== ДАННЫЕ ====== */
+let stars = 10000;
+const giftsList = [
     {name:"Plush Pepe", ton:4930},{name:"Heart Locket", ton:1210},{name:"Durov's Cap", ton:870},
     {name:"Precious Peach", ton:389.5},{name:"Heroic Helmet", ton:255},{name:"Mighty Arm", ton:199.99},
     {name:"Nail Bracelet", ton:124.8},{name:"Astral Shard", ton:119.13},{name:"Artisan Brick", ton:110.24},
@@ -244,658 +108,157 @@
     {name:"Whip Cupcake", ton:1.8},{name:"Xmas Stocking", ton:1.77},{name:"Snake Box", ton:1.72},{name:"Lunar Snake", ton:1.7},
     {name:"Lol Pop", ton:1.67},{name:"B-Day Candle", ton:1.61},{name:"Desk Calendar", ton:1.5}
   ];
+const modsBase=[
+  {name:'💎 +10% к цене',type:'plus10',desc:'+10% к цене результата',cost:800},
+  {name:'🎲 ±30% к цене',type:'rand30',desc:'Случайно +30% или -30%',cost:1000},
+  {name:'🔁 Вернуть 1 подарок',type:'return1',desc:'15% шанс вернуть один из поставленных',cost:1200},
+  {name:'✨ Сохранить модификатор',type:'keepmod',desc:'Шанс сохранить модификатор',cost:900}
+];
+let inventory=[]; // начальный пустой
+// заполним 10 подарков для теста
+for(let i=0;i<10;i++){inventory.push({...gifts[i%gifts.length]});}
+let forgeSlots=[null,null,null,null,null,null];
+let shopItems=[];
 
-  // ---------- Модификаторы: определяем доступные типы ----------
-  // Каждый модификатор — объект {id,name,description,applyFn}
-  // В инвентарь модификатор хранится как {id, type, ...}
-  const modifierTypes = [
-    {
-      id: 'plus10pct',
-      name: '+10% к цене',
-      description: 'Добавляет +10% к итоговой стоимости создаваемого подарка.',
-      // apply will be executed in forge process
-    },
-    {
-      id: 'plusminus30',
-      name: '±30% к цене (рандомно)',
-      description: 'Применяет либо +30%, либо -30% к итоговой стоимости (рандом).'
-    },
-    {
-      id: 'return15pct',
-      name: '15% шанс вернуть один подарок',
-      description: '15% шанс вернуть один из поставленных подарков обратно в инвентарь после ковки.'
-    },
-    {
-      id: 'saveModifier',
-      name: 'Сохранить рандомный мод (кроме себя)',
-      description: 'После ковки случайный использованный модификатор (кроме этого) возвращается в инвентарь.'
-    }
-  ];
+/* ====== УТИЛИТЫ ====== */
+function $(id){return document.getElementById(id);}
+function renderStars(){ $('stars').textContent=Math.floor(stars); }
+function addStars(x){stars+=x;renderStars();}
+function spendStars(x){ if(stars>=x){stars-=x;renderStars();return true;} return false; }
 
-  // ---------- Состояние игры (в памяти) ----------
-  let starBalance = STARTING_STARS;
-  // Инвентарь: массив объектов: подарки с {name, ton, type:'gift'} или моды {type:'mod', modId, name} или stars component {type:'stars', amount}
-  let inventory = [];
-  // Заполним инвентарь первыми 10 подарками для теста
-  inventory = giftsList.slice(0,10).map(g => ({...g, type:'gift'}));
-
-  // Слоты (6) для ковки — null или объект компонента (как в inventory)
-  let slots = [null,null,null,null,null,null];
-
-  // Магазин: массив элементов {modId, price, qty, cooldownExpire} где cooldownExpire — timestamp (ms) когда можно снова продавать (в демо — в памяти)
-  let shop = [];
-
-  // Инициализация магазина (создаёт 3 шт. каждого типа с рандомной ценой)
-  function initShop(){
-    shop = [];
-    modifierTypes.forEach(mod=>{
-      const price = 500 + Math.floor(Math.random()*1001); // 500..1500
-      shop.push({modId:mod.id, name:mod.name, description:mod.description, price, qty: SHOP_QTY_PER_MOD, cooldownExpire:0});
-    });
-  }
-  initShop();
-
-  // ---------- DOM элементы ----------
-  const cardsGrid = document.getElementById('cardsGrid');
-  const forgeBtn = document.getElementById('forgeBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const autoFillBtn = document.getElementById('autoFillBtn');
-  const forgeResult = document.getElementById('forgeResult');
-  const inventoryList = document.getElementById('inventoryList');
-  const starBalanceEl = document.getElementById('starBalance');
-  const invCountEl = document.getElementById('invCount');
-  const shopGrid = document.getElementById('shopGrid');
-
-  // Modal elements
-  const modal = document.getElementById('modal');
-  const modalList = document.getElementById('modalList');
-  const modalSearch = document.getElementById('modalSearch');
-  const closeModalBtn = document.getElementById('closeModal');
-  const tabGifts = document.getElementById('tabGifts');
-  const tabModifiers = document.getElementById('tabModifiers');
-  const tabStars = document.getElementById('tabStars');
-  const modalInvCount = document.getElementById('modalInvCount');
-
-  // Forge animation elements
-  const forgeOverlay = document.getElementById('forgeOverlay');
-  const sparksContainer = document.getElementById('sparksContainer');
-
-  // ---------- Вспомогательные функции ----------
-
-  // Обновить отображение баланса и инвентаря
-  function updateHeader(){
-    starBalanceEl.textContent = Math.floor(starBalance).toLocaleString('ru-RU');
-    invCountEl.textContent = inventory.length;
-  }
-
-  // Попытка чтения gifts/<name>.json — если доступно и содержит поле 'display', вернём его, иначе null
-  async function tryLoadGiftJson(name){
-    try{
-      const url = `gifts/${encodeURIComponent(name)}.json`;
-      const res = await fetch(url);
-      if(!res.ok) return null;
-      const json = await res.json();
-      // допустим, файл имеет структуру { "display":"🎁", "frames": [...], ...}
-      if(json && json.display) return json.display;
-      return null;
-    }catch(e){
-      return null;
-    }
-  }
-
-  // Отрисовать инвентарь (список справа)
-  async function renderInventory(){
-    inventoryList.innerHTML = '';
-    if(inventory.length === 0){
-      inventoryList.innerHTML = '<div class="muted-small">Инвентарь пуст.</div>';
-    }
-    // Для каждого предмета — кнопка продать
-    for(let i=0;i<inventory.length;i++){
-      const it = inventory[i];
-      const row = document.createElement('div');
-      row.className = 'inv-item';
-      const left = document.createElement('div'); left.className='left';
-      const titleBox = document.createElement('div');
-      // Если это подарок — попробуем получить display из JSON, иначе покажем имя
-      if(it.type === 'gift'){
-        const disp = await tryLoadGiftJson(it.name);
-        const title = document.createElement('div'); title.innerHTML = `<div style="font-weight:700">${disp?disp:it.name}</div><div class="muted-small">${it.name}</div>`;
-        titleBox.appendChild(title);
-        left.appendChild(titleBox);
-        const right = document.createElement('div');
-        const priceStars = Math.round(it.ton * TON_TO_STARS);
-        right.innerHTML = `<div style="text-align:right"><div class="muted-small">Цена</div><div class="badge">${priceStars}⭐</div></div>`;
-        row.appendChild(left); row.appendChild(right);
-      } else if(it.type === 'mod'){
-        const title = document.createElement('div'); title.innerHTML = `<div style="font-weight:700">${it.name}</div><div class="muted-small">${it.description}</div>`;
-        titleBox.appendChild(title);
-        left.appendChild(titleBox);
-        const right = document.createElement('div'); right.innerHTML = `<div class="muted-small">Модификатор</div>`;
-        row.appendChild(left); row.appendChild(right);
-      } else if(it.type === 'stars'){
-        const title = document.createElement('div'); title.innerHTML = `<div style="font-weight:700">${it.amount}⭐</div><div class="muted-small">Звёзды</div>`;
-        titleBox.appendChild(title);
-        left.appendChild(titleBox);
-        const right = document.createElement('div'); right.innerHTML = `<div class="muted-small">Компонент</div>`;
-        row.appendChild(left); row.appendChild(right);
-      }
-
-      // Обработчик клика — продажа подарка (если это подарок)
-      row.onclick = () => {
-        if(it.type === 'gift'){
-          if(!confirm(`Продать "${it.name}" за ${(it.ton*TON_TO_STARS).toFixed(0)}⭐?`)) return;
-          const price = Math.round(it.ton * TON_TO_STARS);
-          starBalance += price;
-          inventory.splice(i,1);
-          renderInventory();
-          updateHeader();
-        } else {
-          alert('Можно продавать только подарки (type: gift). Модификаторы и звёзды нельзя продать здесь.');
-        }
-      };
-
-      inventoryList.appendChild(row);
-    }
-    updateHeader();
-    modalInvCount.textContent = inventory.length;
-  }
-
-  // Отрисовать слоты (6 карточек)
-  async function renderSlots(){
-    cardsGrid.innerHTML = '';
-    for(let i=0;i<6;i++){
-      const slot = slots[i];
-      const card = document.createElement('div');
-      card.className = 'card' + (slot ? ' has' : '');
-      // content depends on slot.type
-      if(!slot){
-        card.innerHTML = '<div style="font-size:26px;color:var(--accent)">+</div>';
-      } else {
-        if(slot.type === 'gift'){
-          const disp = await tryLoadGiftJson(slot.name);
-          card.innerHTML = `<div><div class="title">${disp?disp:slot.name}</div><div class="sub">${Math.round(slot.ton*TON_TO_STARS)}⭐</div></div>`;
-        } else if(slot.type === 'mod'){
-          card.innerHTML = `<div><div class="title">${slot.name}</div><div class="sub">Модификатор</div></div>`;
-        } else if(slot.type === 'stars'){
-          card.innerHTML = `<div><div class="title">${slot.amount}⭐</div><div class="sub">Строка</div></div>`;
-        }
-      }
-      // click — open modal to choose
-      (function(index){
-        card.onclick = () => openModalForSlot(index);
-      })(i);
-      cardsGrid.appendChild(card);
-    }
-  }
-
-  // Шаблон создания элемента модификатора для инвентаря
-  function makeModInstance(modId){
-    const modType = modifierTypes.find(m=>m.id===modId);
-    if(!modType) return null;
-    return {type:'mod', modId, name:modType.name, description:modType.description};
-  }
-
-  // Инициализация случайного тестового инвентаря — при необходимости
-  function autofillSlotsForTest(){
-    // перетащим первые доступные подарки в слоты (если есть)
-    for(let i=0;i<6;i++){
-      if(inventory.length>0){
-        // возьмём и удалим первый подарочек
-        slots[i] = inventory.shift();
-      } else {
-        slots[i] = null;
-      }
-    }
-    renderSlots();
-    renderInventory();
-  }
-
-  // ---------- Модальное окно выбора компонента ----------
-  let currentSlotIndex = null;
-  let currentTab = 'gifts'; // 'gifts', 'modifiers', 'stars'
-
-  function openModalForSlot(slotIndex){
-    currentSlotIndex = slotIndex;
-    currentTab = 'gifts';
-    modal.classList.add('show');
-    modal.style.visibility = 'visible';
-    modal.style.opacity = '1';
-    modalSearch.value = '';
-    renderModal();
-  }
-
-  function closeModal(){
-    modal.classList.remove('show');
-    modal.style.visibility = 'hidden';
-    modal.style.opacity = '0';
-    currentSlotIndex = null;
-  }
-
-  closeModalBtn.onclick = closeModal;
-  tabGifts.onclick = () => { currentTab='gifts'; renderModal(); };
-  tabModifiers.onclick = () => { currentTab='modifiers'; renderModal(); };
-  tabStars.onclick = () => { currentTab='stars'; renderModal(); };
-
-  // Рендер модального списка в зависимости от вкладки
-  async function renderModal(){
-    modalList.innerHTML = '';
-    modalInvCount.textContent = inventory.length;
-    const q = modalSearch.value.trim().toLowerCase();
-    if(currentTab === 'gifts'){
-      // Показать только подарки
-      inventory.forEach((it, idx) => {
-        if(it.type !== 'gift') return;
-        if(q && !it.name.toLowerCase().includes(q)) return;
-        const row = document.createElement('div');
-        row.className = 'modal-row';
-        // try to get display
-        const display = await tryLoadGiftJson(it.name);
-        row.innerHTML = `<div><div style="font-weight:700">${display?display:it.name}</div><div class="muted-small">${it.name}</div></div><div class="muted-small">${Math.round(it.ton*TON_TO_STARS)}⭐</div>`;
-        row.onclick = () => {
-          // take the item from inventory and put to slot
-          // find its index in current inventory (might be different)
-          const realIdx = inventory.indexOf(it);
-          if(realIdx === -1) { alert('Элемент не найден.'); return; }
-          const comp = inventory.splice(realIdx,1)[0];
-          // if slot already had something, return it to inventory
-          if(slots[currentSlotIndex]) inventory.push(slots[currentSlotIndex]);
-          slots[currentSlotIndex] = comp;
-          renderSlots();
-          renderInventory();
-          closeModal();
-        };
-        modalList.appendChild(row);
-      });
-      if(modalList.childElementCount===0){
-        modalList.innerHTML = '<div class="muted-small">Нет подарков в инвентаре подходящих под поиск.</div>';
-      }
-    } else if(currentTab === 'modifiers'){
-      // Показать только модификаторы
-      inventory.forEach((it, idx) => {
-        if(it.type !== 'mod') return;
-        if(q && !it.name.toLowerCase().includes(q)) return;
-        const row = document.createElement('div');
-        row.className = 'modal-row';
-        row.innerHTML = `<div><div style="font-weight:700">${it.name}</div><div class="muted-small">${it.description}</div></div><div class="muted-small">Модификатор</div>`;
-        row.onclick = () => {
-          const realIdx = inventory.indexOf(it);
-          if(realIdx === -1) return;
-          const comp = inventory.splice(realIdx,1)[0];
-          if(slots[currentSlotIndex]) inventory.push(slots[currentSlotIndex]);
-          slots[currentSlotIndex] = comp;
-          renderSlots(); renderInventory(); closeModal();
-        };
-        modalList.appendChild(row);
-      });
-      if(modalList.childElementCount===0){
-        modalList.innerHTML = '<div class="muted-small">Нет модификаторов в инвентаре.</div>';
-      }
-    } else if(currentTab === 'stars'){
-      // Показать поле ввода для добавления звёзд как компонента
-      modalList.innerHTML = '';
-      const wrapper = document.createElement('div');
-      wrapper.style.display='flex';
-      wrapper.style.gap='8px';
-      wrapper.style.alignItems='center';
-      const input = document.createElement('input');
-      input.type='number';
-      input.placeholder='Количество звёзд (напр. 100)';
-      input.className='search';
-      input.style.marginTop='6px';
-      input.min=1;
-      input.max=Math.floor(starBalance);
-      const addBtn = document.createElement('button');
-      addBtn.className='btn';
-      addBtn.style.marginTop='6px';
-      addBtn.textContent = 'Добавить как компонент';
-      addBtn.onclick = () => {
-        const v = Number(input.value);
-        if(!v || v<=0){ alert('Введите положительное число звёзд.'); return; }
-        if(v > starBalance){ alert('Недостаточно звёзд на балансе.'); return; }
-        starBalance -= v;
-        // создаём компонент типа stars
-        const comp = {type:'stars', amount: Math.round(v)};
-        if(slots[currentSlotIndex]) inventory.push(slots[currentSlotIndex]);
-        slots[currentSlotIndex] = comp;
-        renderSlots(); renderInventory(); updateHeader();
-        closeModal();
-      };
-      modalList.appendChild(input);
-      modalList.appendChild(addBtn);
-    }
-  }
-
-  modalSearch.addEventListener('input', () => renderModal());
-
-  // ---------- Магазин модификаторов ----------
-  function renderShop(){
-    shopGrid.innerHTML = '';
-    shop.forEach((s, idx) => {
-      const row = document.createElement('div');
-      row.className = 'shop-item';
-      const left = document.createElement('div');
-      left.innerHTML = `<div style="font-weight:700">${s.name}</div><div class="muted-small">${s.description}</div><div class="muted-small">В наличии: ${s.qty}</div>`;
-      const right = document.createElement('div');
-      const priceBadge = `<div style="margin-bottom:6px"><strong>${s.price.toLocaleString('ru-RU')}⭐</strong></div>`;
-      const btn = document.createElement('button');
-      btn.className='btn';
-      btn.textContent = 'Купить';
-      if(s.qty <= 0) { btn.disabled = true; btn.textContent='Нет'; }
-      if(s.cooldownExpire && Date.now() < s.cooldownExpire) {
-        btn.disabled = true;
-        const remaining = s.cooldownExpire - Date.now();
-        btn.textContent = `Радоступно`;
-      }
-      btn.onclick = () => {
-        if(s.qty <= 0) { alert('Нет в наличии.'); return; }
-        if(starBalance < s.price) { alert('Недостаточно звёзд.'); return; }
-        if(s.cooldownExpire && Date.now() < s.cooldownExpire){ alert('Этот мод перезаряжается.'); return; }
-        // Выполняем покупку: списать звезды, добавить модификатор в инвентарь, уменьшить qty.
-        starBalance -= s.price;
-        s.qty -= 1;
-        // добавляем экземпляр модификатора
-        const instance = makeModInstance(s.modId);
-        if(instance) inventory.push(instance);
-        // Если qty == 0, устанавливаем cooldown
-        if(s.qty <= 0){
-          s.cooldownExpire = Date.now() + SHOP_COOLDOWN_MS;
-          // создать новый запас через cooldown — в демо-version мы не создаём setTimeout, просто пометим
-        }
-        renderShop();
-        renderInventory();
-        updateHeader();
-      };
-      right.appendChild(document.createRange().createContextualFragment(priceBadge));
-      right.appendChild(btn);
-      row.appendChild(left); row.appendChild(right);
-      shopGrid.appendChild(row);
-    });
-  }
-
-  // ---------- Ковка: логика ----------
-  // При ковке:
-  // - Проверяем, что выбраны 2..6 компонентов и хотя бы один подарок.
-  // - Снимаем использованные компоненты из слотов (они уже были удалены из инвентаря при выборе).
-  // - Рассчитываем суммарную "стоимость" в звёздах:
-  //     - подарки: ton * TON_TO_STARS
-  //     - stars: amount
-  //     - модификаторы: не добавляют стоимости, а изменяют итоговую цену (см. модификаторы)
-  // - Применяем модификаторы:
-  //     plus10pct => +10% к итоговой стоимости
-  //     plusminus30 => случайно +30% или -30% к итоговой стоимости
-  //     return15pct => 15% шанс вернуть один из поставленных подарков обратно в инвентарь
-  //     saveModifier => после ковки вернуть один случайный использованный мод (кроме себя)
-  // - Результат: с вероятностями:
-  //     провал (материалы теряются) — небольшая вероятность
-  //     успех с понижением: итог=50% от суммы
-  //     успех стандарт: итог=rand(65..75)% от суммы
-  //     успех с повышением: итог=175% от суммы
-  // - Создаётся новый подарок со значением (TON) = (starsValue / TON_TO_STARS)
-  // - Новый подарок добавляется в инвентарь (inventory)
-  // - Если модификаторы восстановлены по эффектам — вернуть соответствующие моды в инвентарь
-
-  function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-  function computeTotalStarsAndExtractUsedMods(components){
-    // components — массив объектов (slots content)
-    let sumStars = 0;
-    const usedMods = [];
-    const usedGiftsIndices = []; // to allow returning one if needed
-    components.forEach((c, idx) => {
-      if(!c) return;
-      if(c.type === 'gift'){
-        sumStars += Math.round(c.ton * TON_TO_STARS);
-      } else if(c.type === 'stars'){
-        sumStars += c.amount;
-      } else if(c.type === 'mod'){
-        usedMods.push(c);
-      }
-    });
-    return {sumStars, usedMods};
-  }
-
-  // Apply modifiers to finalStars (returns modified stars and extra effects info)
-  function applyModifiers(initialStars, usedMods){
-    let stars = initialStars;
-    const applied = {
-      plus10count:0,
-      plusminusResults:[], // + or -
-      returnOneGift:false,
-      savedModifierReturned:null
-    };
-    // First handle deterministic ones
-    usedMods.forEach(m=>{
-      if(m.modId === 'plus10pct'){ stars = Math.round(stars * 1.10); applied.plus10count++; }
-    });
-    // Then plusminus30
-    usedMods.forEach(m=>{
-      if(m.modId === 'plusminus30'){
-        const up = Math.random() < 0.5;
-        if(up){ stars = Math.round(stars * 1.30); applied.plusminusResults.push('+30'); }
-        else { stars = Math.round(stars * 0.70); applied.plusminusResults.push('-30'); }
-      }
-    });
-    // return15pct handled later via separate flag: actual return chance will use 15% per such mod
-    const returnMods = usedMods.filter(m=>m.modId==='return15pct');
-    if(returnMods.length > 0){
-      // For each such mod, roll a 15% chance to return one gift (but spec said "шанс 15% вернуть один из поставленных подарков")
-      // We'll aggregate: if any mod triggers, set returnOneGift = true.
-      const triggered = returnMods.some(()=>Math.random() < 0.15);
-      if(triggered) applied.returnOneGift = true;
-    }
-    // saveModifier: will return one random used modifier (except saveModifier itself)
-    const hasSave = usedMods.some(m=>m.modId === 'saveModifier');
-    if(hasSave){
-      // choose random used modifier excluding saveModifier
-      const candidates = usedMods.filter(m=>m.modId !== 'saveModifier');
-      if(candidates.length > 0){
-        applied.savedModifierReturned = randomChoice(candidates);
-        // we'll actually return it to inventory after forge
-      }
-    }
-    return {stars, applied};
-  }
-
-  // Decide outcome: failure or type of success
-  function determineOutcome(){
-    // We'll use probabilities:
-    //   failure: 7%
-    //   success-lower (50% of sum): 30%
-    //   success-standard (65-75%): 50%
-    //   success-high (175%): 13%
-    // These add to 100% (7+30+50+13=100)
-    const r = Math.random()*100;
-    if(r < 7) return {type:'fail'};
-    if(r < 7 + 30) return {type:'low'}; // 50%
-    if(r < 7 + 30 + 50) return {type:'standard'}; // 65..75
-    return {type:'high'}; // 175%
-  }
-
-  // Generate a new gift object with approximate TON equivalent
-  function createGiftFromStars(starsValue){
-    // To make nicer names, choose a gift from giftsList close to the TON value, or create generated name
-    // Convert stars back to TON:
-    const tonVal = Math.max(0.001, starsValue / TON_TO_STARS);
-    // Find nearest gift by ton
-    let closest = giftsList[0];
-    let bestDiff = Math.abs(closest.ton - tonVal);
-    for(const g of giftsList){
-      const d = Math.abs(g.ton - tonVal);
-      if(d < bestDiff){ bestDiff = d; closest = g; }
-    }
-    // We'll create a new gift object with name derived (to avoid duplicates)
-    // Name like "Forged: <closest.name> (≈X TON)" to show it's crafted
-    const name = `Forged ${closest.name}`;
-    return {type:'gift', name, ton: Number((tonVal).toFixed(4))};
-  }
-
-  // Main forge function
-  async function doForge(){
-    // Collect components
-    const components = slots.filter(s=>s !== null);
-    if(components.length < 2){
-      alert('Нужно выбрать минимум 2 компонентов (минимум один подарок).');
-      return;
-    }
-    if(!components.some(c => c.type === 'gift')){
-      alert('Хотя бы один компонент должен быть подарок.');
-      return;
-    }
-
-    // Start animation
-    showForgeAnim('Плавим материалы...');
-
-    // Compute base stars and used mods
-    const {sumStars, usedMods} = computeTotalStarsAndExtractUsedMods(components);
-
-    // We will remove components from slots — they are consumed if not returned
-    // For now, make a copy of used components to potentially return later
-    const consumedComponents = [...slots];
-    // Clear slots immediately to reflect consumption
-    slots = [null,null,null,null,null,null];
-    renderSlots();
-
-    // Wait FORGE_DURATION_MS
-    await new Promise(r => setTimeout(r, FORGE_DURATION_MS));
-
-    // Determine outcome
-    const outcome = determineOutcome();
-    let finalStars = 0;
-    let appliedInfo = null;
-    if(outcome.type === 'fail'){
-      // Materials lost
-      finalStars = 0;
-      appliedInfo = {outcome:'fail'};
-    } else {
-      // Start with base sum
-      let base = sumStars;
-      // Apply outcome multipliers
-      if(outcome.type === 'low') {
-        base = Math.round(base * 0.50); // 50% of sum
-      } else if(outcome.type === 'standard') {
-        const p = 65 + Math.random()*10; // 65..75
-        base = Math.round(base * (p/100));
-      } else if(outcome.type === 'high'){
-        base = Math.round(base * 1.75); // +75%
-      }
-      // Apply modifiers
-      const modRes = applyModifiers(base, usedMods);
-      finalStars = modRes.stars;
-      appliedInfo = {outcome: outcome.type, modsApplied: modRes.applied};
-    }
-
-    // Handle return of one placed gift if modifier triggered
-    if(appliedInfo && appliedInfo.modsApplied && appliedInfo.modsApplied.returnOneGift){
-      // find a gift among consumedComponents and return one randomly to inventory
-      const giftsPlaced = consumedComponents.filter(c => c && c.type === 'gift');
-      if(giftsPlaced.length > 0){
-        const toReturn = randomChoice(giftsPlaced);
-        inventory.push(toReturn);
-        // Remove one occurrence from consumedComponents so it's not double-used (not strictly necessary here)
-        const idx = consumedComponents.indexOf(toReturn);
-        if(idx > -1) consumedComponents.splice(idx,1);
-        // Inform user
-      }
-    }
-
-    // Handle saveModifier returning random used modifier (except saveModifier itself)
-    if(appliedInfo && appliedInfo.modsApplied && appliedInfo.modsApplied.savedModifierReturned){
-      // Return that specific modifier instance (we assume instances were in usedMods, we need to re-add one instance)
-      inventory.push({...appliedInfo.modsApplied.savedModifierReturned, type:'mod'});
-    }
-
-    // If success (finalStars>0), create new gift accordingly
-    if(finalStars > 0){
-      // Create gift
-      const newGift = createGiftFromStars(finalStars);
-      inventory.push(newGift);
-      forgeResult.innerHTML = `<div style="color:var(--success)">✅ Успех! Получен новый подарок <strong>${newGift.name}</strong> — ≈ <strong>${Math.round(newGift.ton*TON_TO_STARS)}⭐</strong> (основано на ${finalStars}⭐)</div>`;
-    } else {
-      forgeResult.innerHTML = `<div style="color:var(--danger)">💥 Неудача — материалы сгорели и ничего не создано.</div>`;
-    }
-
-    // Any used modifiers/consumed items (except those returned above) are already removed from slots and not re-added.
-    // Update inventory and header
-    renderInventory();
-    renderSlots();
-
-    // hide animation
-    hideForgeAnim();
-  }
-
-  // ---------- Forge animation UI ----------
-  function showForgeAnim(text){
-    forgeOverlay.classList.add('show');
-    document.getElementById('forgeAnimText').textContent = text;
-    // create some sparks
-    sparksContainer.innerHTML = '';
-    for(let i=0;i<10;i++){
-      const s = document.createElement('div');
-      s.className = 'spark';
-      s.style.left = (10 + Math.random()*80) + '%';
-      s.style.animationDelay = (Math.random()*400) + 'ms';
-      s.style.background = Math.random() < 0.5 ? 'var(--accent)' : 'rgba(255,123,0,0.6)';
-      sparksContainer.appendChild(s);
-    }
-  }
-  function hideForgeAnim(){
-    forgeOverlay.classList.remove('show');
-    sparksContainer.innerHTML = '';
-  }
-
-  // ---------- События кнопок ----------
-  forgeBtn.onclick = async () => {
-    // Guard to prevent double-click
-    forgeBtn.disabled = true;
-    await doForge();
-    forgeBtn.disabled = false;
-  };
-  clearBtn.onclick = () => {
-    // возвращаем все установленные в слоты компоненты в инвентарь
-    for(let i=0;i<6;i++){
-      if(slots[i]) inventory.push(slots[i]);
-      slots[i] = null;
-    }
-    renderSlots();
-    renderInventory();
-    forgeResult.textContent = 'Слоты очищены.';
-  };
-  autoFillBtn.onclick = () => {
-    autofillSlotsForTest();
-    forgeResult.textContent = 'Слоты автоматически заполнены (тест).';
-  };
-
-  // ---------- Инициализация UI ----------
-  async function initUI(){
-    // Создать 6 пустых карточек
-    for(let i=0;i<6;i++){
-      const placeholder = document.createElement('div');
-      placeholder.className='card';
-      placeholder.innerHTML = '<div style="font-size:26px;color:var(--accent)">+</div>';
-      cardsGrid.appendChild(placeholder);
-    }
-    updateHeader();
-    await renderInventory();
-    await renderSlots();
-    renderShop();
-  }
-
-  // ---------- Event: магазин периодически обновляет доступ (в демо не используется таймер сохранения) ----------
-  setInterval(() => {
-    // каждые 10 секунд пересчитываем shop (например, для отображения окончания cooldown)
-    renderShop();
-  }, 10000);
-
-  // ---------- Start ----------
-  initUI();
-
-  // Улучшение UX: закрывать модал по esc
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === 'Escape') closeModal();
+/* ====== РЕНДЕР СЛОТОВ ====== */
+function renderForge(){
+  const box=$('forgeSlots'); box.innerHTML='';
+  forgeSlots.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='slot'+(item?' filled':'');
+    div.textContent=item?item.name:'＋';
+    div.onclick=()=>selectItemForSlot(i);
+    box.appendChild(div);
   });
+}
 
-  // Немного пояснений о поведении (покажем в консоли)
-  console.log('Gifts Forge demo loaded. Все данные — в памяти, без сохранения.');
-  </script>
+/* ====== ВЫБОР ПРЕДМЕТА ИЗ ИНВЕНТАРЯ ====== */
+function selectItemForSlot(idx){
+  const list=inventory.map((x,i)=>`${i+1}. ${x.name}`).join('\n');
+  const input=prompt(`Выбери предмет (1-${inventory.length}):\n${list}`);
+  const choice=parseInt(input);
+  if(!isNaN(choice)&&inventory[choice-1]){
+    forgeSlots[idx]=inventory[choice-1];
+    renderForge();
+  }
+}
+
+/* ====== КОВКА ====== */
+$('forgeBtn').onclick=()=>{
+  const chosen=forgeSlots.filter(x=>x);
+  if(chosen.length<2){$('forgeResult').textContent='❗ Нужно минимум 2 предмета';return;}
+  $('forgeBtn').disabled=true;
+  $('forgeBtn').classList.add('forging');
+  $('forgeResult').textContent='⚙️ Ковка...';
+  setTimeout(()=>{
+    $('forgeBtn').disabled=false;
+    $('forgeBtn').classList.remove('forging');
+    const fail=Math.random()<0.15; // 15% неудача
+    if(fail){
+      $('forgeResult').textContent='💥 Неудача! Всё пропало.';
+      chosen.forEach(x=>{
+        const i=inventory.indexOf(x);
+        if(i>-1)inventory.splice(i,1);
+      });
+    } else {
+      const sum=chosen.reduce((a,b)=>a+b.price,0);
+      let factor=0.5+Math.random()*1.25; // 0.5 - 1.75 диапазон
+      let modBonus=1;
+      if(chosen.some(c=>c.type==='plus10')) modBonus+=0.1;
+      if(chosen.some(c=>c.type==='rand30')) modBonus+=Math.random()<0.5?-0.3:0.3;
+      const newPrice=sum*factor*modBonus/Math.max(chosen.length,1);
+      const gift={name:'🎁 Gift '+(inventory.length+1),price:newPrice};
+      inventory.push(gift);
+      $('forgeResult').textContent=`✅ Успех! Новый подарок: ${gift.name} (${newPrice.toFixed(1)} TON)`;
+      // шанс вернуть 1 предмет
+      if(chosen.some(c=>c.type==='return1') && Math.random()<0.15){
+        const ret=chosen[Math.floor(Math.random()*chosen.length)];
+        inventory.push(ret);
+        $('forgeResult').textContent+=' (Один предмет возвращён!)';
+      }
+      // удалить использованные
+      chosen.forEach(x=>{
+        const i=inventory.indexOf(x);
+        if(i>-1)inventory.splice(i,1);
+      });
+    }
+    forgeSlots=[null,null,null,null,null,null];
+    renderInventory();
+    renderForge();
+  },2000);
+};
+
+/* ====== ИНВЕНТАРЬ ====== */
+function renderInventory(){
+  const box=$('inventoryGrid'); box.innerHTML='';
+  if(inventory.length===0){box.innerHTML='<p>Пусто</p>';return;}
+  inventory.forEach((x,i)=>{
+    const div=document.createElement('div');
+    div.className='inv-item';
+    div.textContent=x.name;
+    div.title='Цена: '+x.price.toFixed(1)+' TON';
+    div.onclick=()=>{
+      if(confirm(`Продать ${x.name} за ${Math.floor(x.price*142)} ⭐ ?`)){
+        addStars(x.price*142);
+        inventory.splice(i,1);
+        renderInventory();
+      }
+    };
+    box.appendChild(div);
+  });
+}
+
+/* ====== МАГАЗИН ====== */
+function randomShop(){
+  shopItems=[];
+  for(let i=0;i<3;i++){
+    const mod={...modsBase[Math.floor(Math.random()*modsBase.length)]};
+    mod.cost=500+Math.floor(Math.random()*1000);
+    shopItems.push(mod);
+  }
+}
+function renderShop(){
+  const box=$('shopItems'); box.innerHTML='';
+  shopItems.forEach(mod=>{
+    const div=document.createElement('div');
+    div.className='shop-item';
+    div.innerHTML=`<strong>${mod.name}</strong><br>${mod.desc}<br>⭐ ${mod.cost}`;
+    div.onclick=()=>{
+      if(spendStars(mod.cost)){
+        inventory.push(mod);
+        renderInventory();
+        alert(`Куплен модификатор ${mod.name}`);
+      } else alert('Недостаточно звёзд!');
+    };
+    box.appendChild(div);
+  });
+}
+
+/* ====== НАВИГАЦИЯ ====== */
+function show(tab){
+  ['shop','forge','inventory'].forEach(t=>{
+    $(t+'Tab').classList.add('hidden');
+    $('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.remove('active');
+  });
+  $(tab+'Tab').classList.remove('hidden');
+  $('nav'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  if(tab==='inventory')renderInventory();
+  if(tab==='shop')renderShop();
+}
+$('navForge').onclick=()=>show('forge');
+$('navInventory').onclick=()=>show('inventory');
+$('navShop').onclick=()=>{randomShop();show('shop');};
+
+/* ====== ИНИЦИАЛИЗАЦИЯ ====== */
+renderStars();
+renderForge();
+renderInventory();
+</script>
 </body>
 </html>
