@@ -24,6 +24,8 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;justify-conten
 .forge-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:20px;}
 .forge-card{height:100px;border:2px dashed var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:0.2s;background:#222;}
 .forge-card.selected{border:2px solid var(--accent);background:var(--accent);color:#000;transform:scale(1.05);}
+.forge-card.star-cell{color:gold;font-size:1.6rem;}
+.forge-card.mod-cell{color:#0ff;font-size:1.3rem;}
 #forgeButton{margin-top:20px;background:var(--accent);color:#000;border:none;border-radius:12px;padding:12px 25px;font-size:1.1rem;cursor:pointer;transition:0.2s;}
 #forgeButton:hover{transform:scale(1.05);box-shadow:0 0 15px var(--accent);}
 .result{margin-top:15px;font-size:1.1rem;color:var(--accent);min-height:1.2em;}
@@ -32,8 +34,10 @@ footer button{background:none;border:none;color:var(--text);font-size:1.1rem;cur
 footer button.active{color:var(--accent);font-weight:bold;}
 .inventory h2,.shop h2{color:var(--accent);margin-bottom:10px;}
 .inventory-items,.shop-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
-.inv-item,.shop-item{width:90px;height:90px;border:2px solid var(--accent);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#222;text-align:center;padding:5px;font-size:0.8rem;cursor:pointer;transition:.2s;}
+.inv-item,.shop-item{width:100px;min-height:100px;border:2px solid var(--accent);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#222;text-align:center;padding:5px;font-size:0.8rem;cursor:pointer;transition:.2s;position:relative;}
 .inv-item:hover,.shop-item:hover{background:var(--accent);color:#000;}
+.inv-stars{font-size:0.75rem;color:gold;margin-top:4px;}
+.inv-mod{font-size:0.7rem;color:#0ff;}
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;display:none;}
 .modal-content{background:#111;padding:20px;border:2px solid var(--accent);border-radius:16px;width:90%;max-width:500px;max-height:80%;overflow-y:auto;}
 .modal-content h3{color:var(--accent);margin-bottom:10px;}
@@ -49,14 +53,14 @@ footer button.active{color:var(--accent);font-weight:bold;}
 <main>
   <div id="forgeTab" class="forge-area">
     <h2>Кузница</h2>
-    <p>Выбери 2–6 компонентов для ковки (хотя бы один подарок)</p>
+    <p>Выбери 2–6 компонентов (правый верх — звёзды, правый низ — модификатор)</p>
     <div class="forge-cards" id="forgeCards">
       <div class="forge-card">+</div>
       <div class="forge-card">+</div>
+      <div class="forge-card star-cell">⭐</div>
       <div class="forge-card">+</div>
       <div class="forge-card">+</div>
-      <div class="forge-card">+</div>
-      <div class="forge-card">+</div>
+      <div class="forge-card mod-cell">⚙️</div>
     </div>
     <button id="forgeButton">Ковать!</button>
     <div class="result" id="forgeResult"></div>
@@ -79,10 +83,10 @@ footer button.active{color:var(--accent);font-weight:bold;}
   <button id="navInventory">🎁 Inventory</button>
 </footer>
 
-<!-- Модальное окно выбора предмета -->
+<!-- Модалка выбора -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h3>Выберите предмет</h3>
+    <h3 id="modalTitle">Выберите предмет</h3>
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." />
     <div id="modalItems"></div>
     <button id="closeModal" style="margin-top:10px;padding:8px 15px;background:var(--accent);border:none;border-radius:8px;color:#000;cursor:pointer;">Закрыть</button>
@@ -191,14 +195,12 @@ const gifts = [
 ];
 
 const TON_TO_STARS=142;
-
 const modifiersPool=[
   {name:"+10% цена",effect:"plus10"},
   {name:"±30% цена",effect:"plusminus30"},
   {name:"15% шанс вернуть",effect:"refund"},
   {name:"Сохранить модификатор",effect:"keepmod"}
 ];
-
 // ---------------------- ЭЛЕМЕНТЫ ----------------------
 const forgeCards=document.querySelectorAll('.forge-card');
 const forgeButton=document.getElementById('forgeButton');
@@ -215,32 +217,34 @@ const modal=document.getElementById('modal');
 const modalItems=document.getElementById('modalItems');
 const searchInput=document.getElementById('searchInput');
 const closeModal=document.getElementById('closeModal');
+const modalTitle=document.getElementById('modalTitle');
 const shopItems=document.getElementById('shopItems');
 
 let stars=10000;
-let inventory=gifts.slice(0,10);
+let inventory=gifts.map(g=>({...g}));
 let selectedComponents=Array(6).fill(null);
+let forgeStars=0;
+let forgeMod=null;
 let activeCardIndex=null;
 let modifiers=[];
 
 // ---------------------- ОТОБРАЖЕНИЕ ----------------------
-function renderStars(){ starBalanceElem.textContent=`⭐ ${stars.toLocaleString()}`; }
+function renderStars(){starBalanceElem.textContent=`⭐ ${stars.toLocaleString()}`;}
 
 function renderInventory(){
   inventoryItemsContainer.innerHTML='';
-  if(inventory.length===0){ inventoryItemsContainer.innerHTML='<p>Пусто...</p>'; return;}
+  if(inventory.length===0){inventoryItemsContainer.innerHTML='<p>Пусто...</p>';return;}
   inventory.forEach((item,idx)=>{
     const div=document.createElement('div');
     div.className='inv-item';
-    div.textContent=`${item.name}`;
-    div.title=`${(item.ton*TON_TO_STARS).toFixed(0)}⭐`;
-    // Продажа по клику
+    const starVal=Math.round(Number(item.ton)*TON_TO_STARS);
+    div.innerHTML=`<div>${item.name}</div><div class="inv-stars">${starVal}⭐</div>${item.mod?`<div class="inv-mod">${item.mod.name}</div>`:''}`;
+    div.title=`Цена: ${starVal}⭐`;
     div.onclick=()=>{
-      if(confirm(`Продать ${item.name} за ${(item.ton*TON_TO_STARS).toFixed(0)}⭐?`)){
-        stars+=item.ton*TON_TO_STARS;
+      if(confirm(`Продать ${item.name} за ${starVal}⭐?`)){
+        stars+=starVal;
         inventory.splice(idx,1);
-        renderInventory();
-        renderStars();
+        renderInventory();renderStars();
       }
     };
     inventoryItemsContainer.appendChild(div);
@@ -249,13 +253,14 @@ function renderInventory(){
 
 function renderForgeCards(){
   forgeCards.forEach((card,i)=>{
+    if(i===2){card.innerHTML=forgeStars>0?`⭐${forgeStars}`:'⭐';return;}
+    if(i===5){card.innerHTML=forgeMod?forgeMod.name:'⚙️';return;}
     card.textContent=selectedComponents[i]?selectedComponents[i].name:'+';
   });
 }
 
 function renderShop(){
   shopItems.innerHTML='';
-  // 3 случайных модификатора
   const picks=[];
   while(picks.length<3){
     let m=modifiersPool[Math.floor(Math.random()*modifiersPool.length)];
@@ -268,10 +273,8 @@ function renderShop(){
     div.innerHTML=`${m.name}<br>${cost}⭐`;
     div.onclick=()=>{
       if(stars>=cost){
-        stars-=cost;
-        modifiers.push(m);
-        renderStars();
-        alert(`Куплено: ${m.name}`);
+        stars-=cost;modifiers.push(m);
+        renderStars();alert(`Куплено: ${m.name}`);
       }else alert("Недостаточно звёзд!");
     };
     shopItems.appendChild(div);
@@ -282,11 +285,27 @@ function renderShop(){
 forgeCards.forEach((card,i)=>{
   card.onclick=()=>{
     activeCardIndex=i;
+    if(i===2){ // звезды
+      const input=prompt("Сколько звёзд добавить в ковку?", "1000");
+      const val=parseInt(input);
+      if(val>0&&val<=stars){
+        forgeStars=val;stars-=val;
+        renderStars();renderForgeCards();
+      }
+      return;
+    }
+    if(i===5){ // модификатор
+      if(modifiers.length===0){alert("Нет модификаторов!");return;}
+      const m=modifiers.pop();
+      forgeMod=m;
+      renderForgeCards();
+      return;
+    }
     openModal();
-  }
+  };
 });
-function openModal(){ modal.style.display='flex'; renderModalItems(); }
-function closeModalFunc(){ modal.style.display='none'; activeCardIndex=null; }
+function openModal(){modal.style.display='flex';renderModalItems();}
+function closeModalFunc(){modal.style.display='none';activeCardIndex=null;}
 closeModal.onclick=closeModalFunc;
 searchInput.oninput=renderModalItems;
 
@@ -297,13 +316,12 @@ function renderModalItems(){
     if(item.name.toLowerCase().includes(filter)){
       const div=document.createElement('div');
       div.className='modal-item';
-      div.textContent=`${item.name} (${(item.ton*TON_TO_STARS).toFixed(0)}⭐)`;
+      const val=Math.round(Number(item.ton)*TON_TO_STARS);
+      div.textContent=`${item.name} (${val}⭐)`;
       div.onclick=()=>{
         selectedComponents[activeCardIndex]=item;
         inventory.splice(idx,1);
-        renderForgeCards();
-        renderInventory();
-        closeModalFunc();
+        renderForgeCards();renderInventory();closeModalFunc();
       };
       modalItems.appendChild(div);
     }
@@ -313,7 +331,7 @@ function renderModalItems(){
 // ---------------------- КОВКА ----------------------
 forgeButton.onclick=()=>{
   const components=selectedComponents.filter(Boolean);
-  if(components.length<2){ forgeResult.textContent='❗ Нужно выбрать минимум 2 элемента'; return; }
+  if(components.length<1){forgeResult.textContent='❗ Нужно выбрать хотя бы один предмет';return;}
   forgeButton.disabled=true;
   forgeResult.textContent='⚙️ Ковка...';
   forgeButton.classList.add('forge-anim');
@@ -322,23 +340,27 @@ forgeButton.onclick=()=>{
     forgeButton.disabled=false;
     forgeButton.classList.remove('forge-anim');
     const roll=Math.random();
-    if(roll<0.15){ // неудача
+    if(roll<0.15){
       forgeResult.style.color='var(--fail)';
-      forgeResult.textContent='💥 Неудача! Материалы сгорели.';
-    } else {
-      // успех
-      const totalValue=components.reduce((s,c)=>s+c.ton,0);
-      const mult=0.5+Math.random()*1.25; // 0.5–1.75
+      forgeResult.textContent='💥 Неудача! Всё сгорело.';
+    }else{
+      const totalValue=components.reduce((s,c)=>s+Number(c.ton),0);
+      let mult=0.65+Math.random()*0.1; // 65–75%
+      if(forgeMod&&forgeMod.effect==="plus10") mult*=1.1;
+      if(forgeMod&&forgeMod.effect==="plusminus30"){mult*=(Math.random()<0.5?0.7:1.3);}
       const newVal=totalValue*mult;
-      const newGift=gifts[Math.floor(Math.random()*gifts.length)];
+      const newGift={...gifts[Math.floor(Math.random()*gifts.length)]};
       newGift.ton=newVal;
+      if(forgeMod&&forgeMod.effect==="keepmod") newGift.mod=forgeMod;
+      const addStars=Math.round(forgeStars/TON_TO_STARS/2);
+      if(forgeStars>0) newGift.ton+=addStars;
       inventory.push(newGift);
       forgeResult.style.color='var(--success)';
-      forgeResult.textContent=`✅ Успех! Получен ${newGift.name} (${(newGift.ton*TON_TO_STARS).toFixed(0)}⭐)`;
+      forgeResult.textContent=`✅ Получен ${newGift.name} (${Math.round(newGift.ton*TON_TO_STARS)}⭐)`;
     }
     selectedComponents=Array(6).fill(null);
-    renderForgeCards();
-    renderInventory();
+    forgeStars=0;forgeMod=null;
+    renderForgeCards();renderInventory();
   },2000);
 };
 
