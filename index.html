@@ -17,24 +17,27 @@
   --epic: #a200ff;
   --legendary: #ff0044;
 }
-*{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
-body{margin:0;background-color:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;}
+*{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;user-select:none;}
+body{margin:0;background-color:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 header{text-align:center;padding:12px 0;background:#111;border-bottom:2px solid var(--accent);font-size:1.4rem;letter-spacing:1px;position:relative;}
 #starBalance{position:absolute;right:20px;top:12px;font-size:1rem;color:var(--accent);}
 #activeBoostDisplay{position:absolute;left:20px;top:12px;font-size:0.9rem;color:var(--accent);}
-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto;}
 .hidden{display:none;}
-.forge-area,.inventory,.shop{text-align:center;max-width:700px;width:100%;border:2px solid var(--card-border);background:var(--card-bg);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 0 10px #ff7b0033;}
-.forge-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:20px;}
-.forge-card{height:100px;border:2px dashed var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:0.3s;background:#222;}
+.forge-area,.inventory,.shop{text-align:center;max-width:700px;width:100%;border:2px solid var(--card-border);background:var(--card-bg);border-radius:16px;padding:20px;margin-bottom:80px;box-shadow:0 0 10px #ff7b0033;position:relative;}
+.forge-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:20px;position:relative;}
+.forge-card{height:100px;border:2px dashed var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:0.3s;background:#222;position:relative;}
 .forge-card.selected{border:2px solid var(--accent);background:var(--accent);color:#000;transform:scale(1.05);}
 #forgeButton{margin-top:20px;background:var(--accent);color:#000;border:none;border-radius:12px;padding:12px 25px;font-size:1.1rem;cursor:pointer;transition:0.2s;}
 #forgeButton:hover{transform:scale(1.05);box-shadow:0 0 15px var(--accent);}
 .result{margin-top:15px;font-size:1.1rem;color:var(--accent);min-height:1.2em;}
-footer{display:flex;justify-content:space-around;border-top:2px solid var(--accent);background:#111;padding:12px 0;}
+footer{position:fixed;bottom:0;left:0;width:100%;display:flex;justify-content:space-around;border-top:2px solid var(--accent);background:#111;padding:12px 0;}
 footer button{background:none;border:none;color:var(--text);font-size:1.1rem;cursor:pointer;}
 footer button.active{color:var(--accent);font-weight:bold;}
 .inventory h2,.shop h2{color:var(--accent);margin-bottom:10px;}
+.inventory-tabs{display:flex;justify-content:center;gap:10px;margin-bottom:10px;}
+.inv-tab-btn{background:#222;border:1px solid var(--accent);color:var(--accent);padding:6px 12px;border-radius:8px;cursor:pointer;}
+.inv-tab-btn.active{background:var(--accent);color:#000;font-weight:bold;}
 .inventory-items,.shop-items{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
 .inv-item,.shop-item{width:90px;height:90px;border:2px solid var(--accent);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#222;text-align:center;padding:5px;font-size:0.8rem;cursor:pointer;transition:.3s;}
 .inv-item:hover,.shop-item:hover{background:var(--accent);color:#000;}
@@ -47,12 +50,13 @@ footer button.active{color:var(--accent);font-weight:bold;}
 .search-input{width:100%;padding:8px;margin-bottom:10px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;}
 .modal-item{padding:10px;border:1px solid var(--accent);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:0.2s;background:#222;}
 .modal-item:hover{background:var(--accent);color:#000;}
-.forge-ready{animation:glow 1.5s infinite;}
-@keyframes glow{0%,100%{box-shadow:0 0 10px var(--accent);}50%{box-shadow:0 0 25px var(--accent);}}
+.forge-connection{position:absolute;width:2px;background:var(--accent);transform-origin:top left;animation:glowLine 2s infinite alternate;}
+@keyframes glowLine{0%{box-shadow:0 0 5px var(--accent);}100%{box-shadow:0 0 15px var(--accent);}}
+.notification{position:fixed;bottom:80px;right:20px;background:var(--accent);color:#000;padding:10px 15px;border-radius:10px;opacity:0;transition:opacity .5s;z-index:2000;}
+.notification.show{opacity:1;}
 .shop-tabs{display:flex;justify-content:center;gap:10px;margin-bottom:10px;}
 .shop-tab-btn{background:#222;border:1px solid var(--accent);color:var(--accent);padding:6px 12px;border-radius:8px;cursor:pointer;}
 .shop-tab-btn.active{background:var(--accent);color:#000;font-weight:bold;}
-#shopTimer{color:var(--accent);font-size:0.9rem;margin-top:5px;}
 </style>
 </head>
 <body>
@@ -63,9 +67,10 @@ footer button.active{color:var(--accent);font-weight:bold;}
 </header>
 
 <main>
+  <!-- Кузница -->
   <div id="forgeTab" class="forge-area">
     <h2>Кузница</h2>
-    <p>Выбери 2–6 компонентов для ковки (хотя бы один подарок)</p>
+    <p>Выбери 2–6 компонентов для ковки</p>
     <div class="forge-cards" id="forgeCards">
       <div class="forge-card">+</div>
       <div class="forge-card">+</div>
@@ -74,22 +79,29 @@ footer button.active{color:var(--accent);font-weight:bold;}
       <div class="forge-card">⭐</div>
       <div class="forge-card">🧩</div>
     </div>
+    <canvas id="forgeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
     <button id="forgeButton">Ковать!</button>
     <div class="result" id="forgeResult"></div>
   </div>
 
+  <!-- Инвентарь -->
   <div id="inventoryTab" class="inventory hidden">
     <h2>Инвентарь</h2>
+    <div class="inventory-tabs">
+      <button class="inv-tab-btn active" data-type="gifts">🎁 Подарки</button>
+      <button class="inv-tab-btn" data-type="mods">🧩 Модификаторы</button>
+      <button class="inv-tab-btn" data-type="boosts">⚡ Бустеры</button>
+    </div>
     <div class="inventory-items" id="inventoryItems"></div>
   </div>
 
+  <!-- Магазин -->
   <div id="shopTab" class="shop hidden">
     <h2>Магазин</h2>
     <div class="shop-tabs">
       <button class="shop-tab-btn active" data-tab="mods">Модификаторы</button>
       <button class="shop-tab-btn" data-tab="boosts">Бустеры</button>
     </div>
-    <div id="shopTimer"></div>
     <div class="shop-items" id="shopItems"></div>
   </div>
 </main>
@@ -100,6 +112,7 @@ footer button.active{color:var(--accent);font-weight:bold;}
   <button id="navInventory">🎁 Inventory</button>
 </footer>
 
+<!-- Модалки -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <h3>Выберите предмет</h3>
@@ -117,8 +130,9 @@ footer button.active{color:var(--accent);font-weight:bold;}
   </div>
 </div>
 
+<div id="notification" class="notification"></div>
+
 <script>
-// === ДАННЫЕ ===
 const TON_TO_STARS=142;
 const gifts = [
   {name:"Plush Pepe", ton:4930},
@@ -219,158 +233,145 @@ const gifts = [
   {name:"Desk Calendar", ton:1.5}
 ];
 
-const modifiersPool=[{name:"+10% шанс успеха",effect:"forgePlus10"},{name:"+10% к цене",effect:"plus10"},{name:"±30% к цене",effect:"plusminus30"},{name:"15% шанс вернуть",effect:"refund"}];
-const boostersPool=[{name:"5 мин: +20% шанс успеха",effect:"boostForge",cost:2000,duration:300000},{name:"5 мин: +15% к продажам",effect:"boostSell",cost:1500,duration:300000}];
-
+const modifiersPool=[
+  {name:"+10% шанс успеха",effect:"forgePlus10"},
+  {name:"+10% к цене",effect:"plus10"},
+  {name:"±30% к цене",effect:"plusminus30"},
+  {name:"15% шанс вернуть",effect:"refund"}
+];
+const boostersPool=[
+  {name:"5 мин: +20% шанс успеха",effect:"boostForge",cost:2000,duration:300000},
+  {name:"5 мин: +15% к продажам",effect:"boostSell",cost:1500,duration:300000}
+];
 let stars=10000;
 let inventory=gifts.slice();
+let modsInv=[];
+let boostsInv=[];
 let modifiers=[];
 let activeBoosts=[];
 let shopTab='mods';
-let shopTimer=60;
+let invTab='gifts';
 let selectedComponents=Array(6).fill(null);
 let activeCardIndex=null;
 
-// === ЭЛЕМЕНТЫ ===
-const starBalance=document.getElementById("starBalance");
 const forgeCards=document.querySelectorAll(".forge-card");
 const forgeButton=document.getElementById("forgeButton");
 const forgeResult=document.getElementById("forgeResult");
-const inventoryContainer=document.getElementById("inventoryItems");
+const starBalance=document.getElementById("starBalance");
+const inventoryItems=document.getElementById("inventoryItems");
 const modal=document.getElementById("modal");
 const modalItems=document.getElementById("modalItems");
-const searchInput=document.getElementById("searchInput");
 const closeModal=document.getElementById("closeModal");
+const searchInput=document.getElementById("searchInput");
 const modifierModal=document.getElementById("modifierModal");
 const modifierItems=document.getElementById("modifierItems");
 const closeModifierModal=document.getElementById("closeModifierModal");
-const activeBoostDisplay=document.getElementById("activeBoostDisplay");
 const shopItems=document.getElementById("shopItems");
-const shopTabBtns=document.querySelectorAll(".shop-tab-btn");
-const shopTimerElem=document.getElementById("shopTimer");
+const activeBoostDisplay=document.getElementById("activeBoostDisplay");
+const forgeCanvas=document.getElementById("forgeCanvas");
+const notification=document.getElementById("notification");
+const ctx=forgeCanvas.getContext("2d");
 
-// === ФУНКЦИИ ===
 function renderStars(){starBalance.textContent=`⭐ ${Math.floor(stars).toLocaleString()}`;}
-function rarityClass(value){if(value>10000)return"legendary";if(value>5000)return"epic";if(value>1000)return"rare";return"";}
+function rarityClass(v){if(v>10000)return"legendary";if(v>5000)return"epic";if(v>1000)return"rare";return"";}
+function showNotification(text){
+  notification.textContent=text;
+  notification.classList.add("show");
+  setTimeout(()=>notification.classList.remove("show"),2000);
+}
+
 function renderInventory(){
-  inventoryContainer.innerHTML="";
-  if(!inventory.length){inventoryContainer.innerHTML="<p>Пусто...</p>";return;}
-  inventory.forEach((item,idx)=>{
+  inventoryItems.innerHTML="";
+  let list=[];
+  if(invTab==="gifts")list=inventory;
+  if(invTab==="mods")list=modsInv;
+  if(invTab==="boosts")list=boostsInv;
+  if(!list.length){inventoryItems.innerHTML="<p>Пусто...</p>";return;}
+  list.forEach((item,idx)=>{
     const div=document.createElement("div");
-    div.className=`inv-item ${rarityClass(item.ton*TON_TO_STARS)}`;
-    div.innerHTML=`${item.name}<br>${Math.round(item.ton*TON_TO_STARS)}⭐`;
+    div.className=`inv-item ${rarityClass(item.ton?item.ton*TON_TO_STARS:0)}`;
+    div.innerHTML=item.name+(item.ton?`<br>${Math.round(item.ton*TON_TO_STARS)}⭐`:"");
     div.onclick=()=>{
-      if(confirm(`Продать ${item.name}?`)){
-        stars+=item.ton*TON_TO_STARS;
-        inventory.splice(idx,1);
-        renderInventory();renderStars();
+      if(invTab==="gifts"){
+        if(confirm(`Продать ${item.name}?`)){
+          let price=item.ton*TON_TO_STARS;
+          if(activeBoosts.some(b=>b.effect==="boostSell"))price*=1.15;
+          stars+=price;inventory.splice(idx,1);
+          renderInventory();renderStars();
+        }
+      } else if(invTab==="boosts"){
+        boostsInv.splice(idx,1);
+        activeBoosts.push({...item,activated:Date.now()});
+        showNotification(`Активирован ${item.name}`);
+      } else if(invTab==="mods"){
+        alert(`${item.name} можно использовать в кузнице!`);
       }
     };
-    inventoryContainer.appendChild(div);
+    inventoryItems.appendChild(div);
   });
 }
+document.querySelectorAll(".inv-tab-btn").forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll(".inv-tab-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");invTab=b.dataset.type;renderInventory();}
+});
+
 function renderForgeCards(){
   forgeCards.forEach((c,i)=>{
     c.textContent=selectedComponents[i]?selectedComponents[i].name:(i==4?"⭐":i==5?"🧩":"+");
+    c.classList.toggle("selected",!!selectedComponents[i]);
   });
-  const count=selectedComponents.filter(Boolean).length;
-  forgeCards.forEach(c=>c.classList.toggle("forge-ready",count>=2));
+  drawConnections();
 }
-function renderShop(){
-  shopItems.innerHTML="";
-  if(shopTab==="mods"){
-    modifiersPool.forEach(m=>{
-      const cost=500+Math.floor(Math.random()*1000);
-      const div=document.createElement("div");
-      div.className="shop-item";
-      div.innerHTML=`${m.name}<br>${cost}⭐`;
-      div.onclick=()=>{
-        if(stars>=cost){stars-=cost;modifiers.push(m);renderStars();alert("Куплено "+m.name);}else alert("Недостаточно звёзд!");
-      };
-      shopItems.appendChild(div);
-    });
-  } else {
-    boostersPool.forEach(b=>{
-      const div=document.createElement("div");
-      div.className="shop-item";
-      div.innerHTML=`${b.name}<br>${b.cost}⭐`;
-      div.onclick=()=>{
-        if(stars>=b.cost){
-          stars-=b.cost;renderStars();
-          activeBoosts.push({...b,activated:Date.now()});
-          alert("Активирован "+b.name);
-        } else alert("Недостаточно звёзд!");
-      };
-      shopItems.appendChild(div);
-    });
+function drawConnections(){
+  const rect=forgeCanvas.getBoundingClientRect();
+  forgeCanvas.width=rect.width;forgeCanvas.height=rect.height;
+  ctx.clearRect(0,0,forgeCanvas.width,forgeCanvas.height);
+  const points=[];
+  forgeCards.forEach((card,i)=>{
+    if(selectedComponents[i]){
+      const r=card.getBoundingClientRect();
+      points.push({x:(r.left+r.right)/2-rect.left,y:(r.top+r.bottom)/2-rect.top});
+    }
+  });
+  ctx.strokeStyle=varColor();
+  ctx.lineWidth=3;
+  for(let i=0;i<points.length;i++){
+    for(let j=i+1;j<points.length;j++){
+      ctx.beginPath();
+      ctx.moveTo(points[i].x,points[i].y);
+      ctx.lineTo(points[j].x,points[j].y);
+      ctx.stroke();
+    }
   }
 }
-function updateBoostDisplay(){
-  if(activeBoosts.length===0){activeBoostDisplay.textContent="";return;}
-  let i=0;
-  function showNext(){
-    if(activeBoosts.length===0){activeBoostDisplay.textContent="";return;}
-    activeBoostDisplay.textContent=activeBoosts[i].name;
-    i=(i+1)%activeBoosts.length;
-    setTimeout(showNext,5000);
-  }
-  showNext();
-}
-setInterval(()=>{activeBoosts=activeBoosts.filter(b=>Date.now()-b.activated<b.duration);},1000);
-setInterval(updateBoostDisplay,1000);
-function updateShopTimer(){shopTimer--;shopTimerElem.textContent=`Обновление через ${shopTimer}s`;if(shopTimer<=0){shopTimer=60;renderShop();}}
+function varColor(){return getComputedStyle(document.documentElement).getPropertyValue("--accent");}
 
-// === Ковка ===
-forgeButton.onclick=()=>{
-  const comps=selectedComponents.filter(Boolean);
-  if(comps.length<2){forgeResult.textContent="⚠️ Нужно минимум 2 компонента!";return;}
-  forgeButton.disabled=true;
-  forgeButton.textContent="⛏ Ковка...";
-  forgeResult.textContent="";
-  let successChance=50;
-  if(selectedComponents[5]&&selectedComponents[5].effect==="forgePlus10")successChance+=10;
-  if(activeBoosts.some(b=>b.effect==="boostForge"))successChance+=20;
-  setTimeout(()=>{
-    if(Math.random()*100<successChance){
-      const gift=gifts[Math.floor(Math.random()*gifts.length)];
-      inventory.push({...gift});
-      forgeResult.innerHTML=`✅ Успешно! Получен подарок: <b>${gift.name}</b>`;
-      renderInventory();
-    } else forgeResult.textContent="💥 Неудача! Все предметы потеряны!";
-    selectedComponents=Array(6).fill(null);
-    renderForgeCards();
-    forgeButton.disabled=false;
-    forgeButton.textContent="Ковать!";
-  },2000);
-};
-
-// === Слоты ===
 forgeCards.forEach((card,i)=>{
+  card.onmousedown=e=>e.preventDefault();
   card.onclick=()=>{
     activeCardIndex=i;
     if(i===4){
       const amt=parseInt(prompt("Введите количество звёзд (1–1000):","100"));
-      if(!isNaN(amt)&&amt>0){selectedComponents[i]={name:`⭐ ${amt} звёзд`,ton:amt/TON_TO_STARS};}
+      if(!isNaN(amt)&&amt>0)selectedComponents[i]={name:`⭐ ${amt} звёзд`,ton:amt/TON_TO_STARS};
       renderForgeCards();
       return;
     }
     if(i===5){
-      if(modifiers.length===0){alert("Нет модификаторов!");return;}
-      openModifierModal();
-      return;
+      if(modsInv.length===0){alert("Нет модификаторов!");return;}
+      openModifierModal();return;
     }
     openModal();
   };
 });
+
 function openModal(){modal.style.display="flex";renderModalItems();}
-function closeModalFunc(){modal.style.display="none";activeCardIndex=null;}
+function closeModalFunc(){modal.style.display="none";}
 closeModal.onclick=closeModalFunc;
 searchInput.oninput=renderModalItems;
 function renderModalItems(){
   modalItems.innerHTML="";
-  const filter=searchInput.value.toLowerCase();
+  const f=searchInput.value.toLowerCase();
   inventory.forEach((item,idx)=>{
-    if(item.name.toLowerCase().includes(filter)){
+    if(item.name.toLowerCase().includes(f)){
       const div=document.createElement("div");
       div.className="modal-item";
       div.textContent=`${item.name} (${Math.round(item.ton*TON_TO_STARS)}⭐)`;
@@ -386,45 +387,106 @@ function renderModalItems(){
 function openModifierModal(){
   modifierModal.style.display="flex";
   modifierItems.innerHTML="";
-  modifiers.forEach((m,idx)=>{
+  modsInv.forEach((m,idx)=>{
     const div=document.createElement("div");
     div.className="modal-item";
     div.textContent=m.name;
     div.onclick=()=>{
       selectedComponents[5]=m;
-      modifiers.splice(idx,1);
-      renderForgeCards();
-      closeModifierModalFunc();
+      modsInv.splice(idx,1);
+      renderForgeCards();renderInventory();closeModifierModalFunc();
     };
     modifierItems.appendChild(div);
   });
 }
-function closeModifierModalFunc(){modifierModal.style.display="none";activeCardIndex=null;}
+function closeModifierModalFunc(){modifierModal.style.display="none";}
 closeModifierModal.onclick=closeModifierModalFunc;
 
-// === Навигация ===
-document.getElementById("navForge").onclick=()=>showTab("forge");
-document.getElementById("navInventory").onclick=()=>showTab("inventory");
-document.getElementById("navShop").onclick=()=>showTab("shop");
-shopTabBtns.forEach(btn=>{
-  btn.onclick=()=>{shopTab=btn.dataset.tab;shopTabBtns.forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderShop();}
-});
-function showTab(tab){
-  document.getElementById("forgeTab").classList.add("hidden");
-  document.getElementById("inventoryTab").classList.add("hidden");
-  document.getElementById("shopTab").classList.add("hidden");
-  document.querySelectorAll("footer button").forEach(b=>b.classList.remove("active"));
-  if(tab==="forge"){document.getElementById("forgeTab").classList.remove("hidden");document.getElementById("navForge").classList.add("active");}
-  if(tab==="inventory"){document.getElementById("inventoryTab").classList.remove("hidden");document.getElementById("navInventory").classList.add("active");}
-  if(tab==="shop"){document.getElementById("shopTab").classList.remove("hidden");document.getElementById("navShop").classList.add("active");}
-}
+// === Ковка ===
+forgeButton.onclick=()=>{
+  const comps=selectedComponents.filter(Boolean);
+  if(comps.length<2){forgeResult.textContent="⚠️ Нужно минимум 2 компонента!";return;}
+  forgeButton.disabled=true;
+  forgeButton.textContent="⛏ Ковка...";
+  forgeResult.textContent="";
+  let successChance=50;
+  if(selectedComponents[5]&&selectedComponents[5].effect==="forgePlus10")successChance+=10;
+  if(activeBoosts.some(b=>b.effect==="boostForge"))successChance+=20;
+  setTimeout(()=>{
+    const roll=Math.random()*100;
+    if(roll<=successChance){
+      const baseValue=comps.reduce((s,c)=>s+(c.ton||0),0);
+      const randomGift=gifts[Math.floor(Math.random()*gifts.length)];
+      const mult=(Math.random()*0.4+0.65);
+      let newVal=baseValue*mult;
+      if(selectedComponents[5]){
+        const e=selectedComponents[5].effect;
+        if(e==="plus10")newVal*=1.1;
+        if(e==="plusminus30")newVal*=(Math.random()<0.5?0.7:1.3);
+      }
+      const newGift={...randomGift,ton:newVal};
+      inventory.push(newGift);
+      forgeResult.textContent=`✅ Успешно! Получен ${newGift.name} (${Math.round(newGift.ton*TON_TO_STARS)}⭐)`;
+    }else{
+      forgeResult.textContent="💥 Неудача! Все предметы потеряны!";
+    }
+    selectedComponents=Array(6).fill(null);
+    renderForgeCards();renderInventory();forgeButton.disabled=false;forgeButton.textContent="Ковать!";
+  },2000);
+};
 
-// === Инициализация ===
+// === Магазин ===
+function renderShop(){
+  shopItems.innerHTML="";
+  let items=shopTab==="mods"?modifiersPool:boostersPool;
+  items.forEach(it=>{
+    const div=document.createElement("div");
+    div.className="shop-item";
+    div.innerHTML=`${it.name}<br>${it.cost||1000}⭐`;
+    div.onclick=()=>{
+      if(stars<(it.cost||1000)){alert("Недостаточно звёзд!");return;}
+      stars-=(it.cost||1000);
+      if(shopTab==="mods")modsInv.push({...it});
+      else boostsInv.push({...it});
+      renderStars();showNotification(`Куплен ${it.name}`);
+    };
+    shopItems.appendChild(div);
+  });
+}
+document.querySelectorAll(".shop-tab-btn").forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll(".shop-tab-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");shopTab=b.dataset.tab;renderShop();}
+});
+
+// === Навигация ===
+const navButtons={forge:document.getElementById("navForge"),inv:document.getElementById("navInventory"),shop:document.getElementById("navShop")};
+function switchTab(tab){
+  document.getElementById("forgeTab").classList.toggle("hidden",tab!=="forge");
+  document.getElementById("inventoryTab").classList.toggle("hidden",tab!=="inv");
+  document.getElementById("shopTab").classList.toggle("hidden",tab!=="shop");
+  Object.values(navButtons).forEach(b=>b.classList.remove("active"));
+  if(tab==="forge")navButtons.forge.classList.add("active");
+  if(tab==="inv")navButtons.inv.classList.add("active");
+  if(tab==="shop")navButtons.shop.classList.add("active");
+  renderInventory();renderShop();renderForgeCards();
+}
+navButtons.forge.onclick=()=>switchTab("forge");
+navButtons.inv.onclick=()=>switchTab("inv");
+navButtons.shop.onclick=()=>switchTab("shop");
+
+// === Активные бустеры ===
+function cycleBoosts(){
+  if(activeBoosts.length===0){activeBoostDisplay.textContent="";return;}
+  const idx=Math.floor((Date.now()/5000)%activeBoosts.length);
+  const b=activeBoosts[idx];
+  activeBoostDisplay.textContent=`⚡ ${b.name}`;
+  activeBoosts=activeBoosts.filter(bb=>(Date.now()-bb.activated)<bb.duration);
+}
+setInterval(cycleBoosts,1000);
+
 renderStars();
 renderInventory();
 renderForgeCards();
 renderShop();
-setInterval(updateShopTimer,1000);
 </script>
 </body>
 </html>
