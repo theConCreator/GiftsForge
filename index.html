@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gifts Forge</title>
+<title>🔥 Gifts Forge 🔥</title>
 <style>
 :root {
   --bg: #0d0d0d;
@@ -175,8 +175,8 @@ footer button.active {
   transition: 0.3s;
 }
 .inv-item:hover { background: var(--accent); color: #000; }
-.inv-item.rare0 { border-color: #b9faff; box-shadow: 0 0 10px #b9faff; }
-.inv-item.rare1 { border-color: #88e6ff; box-shadow: 0 0 10px #88e6ff; }
+.inv-item.rare0 { border-color: #9cc7f7; box-shadow: 0 0 10px #9cc7f7; }
+.inv-item.rare1 { border-color: #57a5ff; box-shadow: 0 0 10px #57a5ff; }
 .inv-item.rare2 { border-color: #0066ff; box-shadow: 0 0 10px #0066ff; }
 .inv-item.rare3 { border-color: #b600ff; box-shadow: 0 0 10px #b600ff; }
 .inv-item.rare4 { border-color: #ff00aa; box-shadow: 0 0 10px #ff00aa; }
@@ -277,6 +277,14 @@ footer button.active {
   flex-direction: column;
   font-size: 0.9rem;
   flex-shrink: 0;
+  position: relative;
+}
+.roulette-underline {
+  position: absolute;
+  bottom: 0;
+  height: 6px;
+  width: 100%;
+  border-radius: 0 0 14px 14px;
 }
 #rouletteMarker {
   position: absolute;
@@ -328,7 +336,6 @@ footer button.active {
   <button id="navInventory">🎁 Inventory</button>
 </footer>
 
-<!-- Модалка выбора -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <h3>Выберите подарок</h3>
@@ -338,7 +345,6 @@ footer button.active {
   </div>
 </div>
 
-<!-- Рулетка -->
 <div id="rouletteOverlay">
   <div id="rouletteContainer">
     <div id="rouletteLine"></div>
@@ -348,276 +354,218 @@ footer button.active {
 </div>
 
 <script>
-/* === БАЗОВЫЕ НАСТРОЙКИ === */
+/* ===== БАЗОВЫЕ НАСТРОЙКИ ===== */
 const TON_TO_STARS = 142;
-const gifts = [
-  {name:"Plush Pepe", ton:4930},
-  {name:"Heart Locket", ton:1210},
-  {name:"Durov's Cap", ton:870},
-  {name:"Precious Peach", ton:389.5},
-  {name:"Heroic Helmet", ton:255},
-  {name:"Mighty Arm", ton:199.99},
-  {name:"Nail Bracelet", ton:124.8},
-  {name:"Astral Shard", ton:119.13},
-  {name:"Artisan Brick", ton:110.24},
-  {name:"Mini Oscar", ton:93.19},
-  {name:"Loot Bag", ton:93},
-  {name:"Ion Gem", ton:82.38},
-  {name:"Perfume Bottle", ton:80.62},
-  {name:"Magic Potion", ton:73.9},
-  {name:"Gem Signet", ton:66.89},
-  {name:"Scared Cat", ton:57.69},
-  {name:"Bonded Ring", ton:53.97},
-  {name:"Westside Sign", ton:53.6},
-  {name:"Genie Lamp", ton:47},
-  {name:"Swiss Watch", ton:40},
-  {name:"Sharp Tongue", ton:39.76},
-  {name:"Kissed Frog", ton:31.25},
-  {name:"Electric Skull", ton:30.4},
-  {name:"Signet Ring", ton:27.78},
-  {name:"Neko Helmet", ton:27},
-  {name:"Low Rider", ton:26.11},
-  {name:"Vintage Cigar", ton:25},
-  {name:"Toy Bear", ton:24.11},
-  {name:"Voodoo Doll", ton:18.88},
-  {name:"Mad Pumpkin", ton:18.27},
-  {name:"Diamond Ring", ton:18},
-  {name:"Eternal Rose", ton:15.17},
-  {name:"Ionic Dryer", ton:11.4},
-  {name:"Cupid Charm", ton:11.01},
-  {name:"Love Potion", ton:10.38},
-  {name:"Flying Broom", ton:9.77},
-  {name:"Trapped Heart", ton:8.67},
-  {name:"Top Hat", ton:8.57},
-  {name:"Skull Flower", ton:8.48},
-  {name:"Crystal Ball", ton:8.24},
-  {name:"Record Player", ton:8},
-  {name:"Sky Stilettos", ton:7.32},
-  {name:"Love Candle", ton:7.15},
-  {name:"Sleigh Bell", ton:6.6},
-  {name:"Snoop Cigar", ton:5.89},
-  {name:"Hanging Star", ton:5.3},
-  {name:"Sakura Flower", ton:5.21},
-  {name:"Valentine Box", ton:4.61},
-  {name:"Jolly Chimp", ton:4.51},
-  {name:"Evil Eye", ton:4.4},
-  {name:"Berry Box", ton:3.98},
-  {name:"Eternal Candle", ton:3.92},
-  {name:"Snow Mittens", ton:3.9},
-  {name:"Spy Agaric", ton:3.88},
-  {name:"Input Key", ton:3.76},
-  {name:"Jelly Bunny", ton:3.75},
-  {name:"Bow Tie", ton:3.6},
-  {name:"Bunny Muffin", ton:3.46},
-  {name:"Light Sword", ton:3.3},
-  {name:"Witch Hat", ton:3.14},
-  {name:"Hex Pot", ton:3.07},
-  {name:"Lush Bouquet", ton:3.07},
-  {name:"Joyful Bundle", ton:3.07},
-  {name:"Snow Globe", ton:2.89},
-  {name:"Restless Jar", ton:2.72},
-  {name:"Santa Hat", ton:2.68},
-  {name:"Easter Egg", ton:2.61},
-  {name:"Star Notepad", ton:2.5},
-  {name:"Moon Pendant", ton:2.5},
-  {name:"Jack-in-the-Box", ton:2.4},
-  {name:"Swag Bag", ton:2.4},
-  {name:"Fresh Socks", ton:2.2},
-  {name:"Spiced Wine", ton:2.19},
-  {name:"Stellar Rocket", ton:2.18},
-  {name:"Snoop Dogg", ton:2.15},
-  {name:"Cookie Heart", ton:2.12},
-  {name:"Jingle Bells", ton:2.12},
-  {name:"Tama Gadget", ton:2.11},
-  {name:"Hypno Lollipop", ton:2.09},
-  {name:"Winter Wreath", ton:2.06},
-  {name:"Party Sparkler", ton:2.06},
-  {name:"Ginger Cookie", ton:2.05},
-  {name:"Big Year", ton:2.02},
-  {name:"Jester Hat", ton:2},
-  {name:"Holiday Drink", ton:1.93},
-  {name:"Pet Snake", ton:1.93},
-  {name:"Homemade Cake", ton:1.91},
-  {name:"Candy Cane", ton:1.89},
-  {name:"Clover Pin", ton:1.88},
-  {name:"Whip Cupcake", ton:1.8},
-  {name:"Xmas Stocking", ton:1.77},
-  {name:"Snake Box", ton:1.72},
-  {name:"Lunar Snake", ton:1.7},
-  {name:"Lol Pop", ton:1.67},
-  {name:"B-Day Candle", ton:1.61},
-  {name:"Desk Calendar", ton:1.5},
-  { name: "Bear", ton: 0.105 },
-  { name: "Heart", ton: 0.105 },
-  { name: "Rose", ton: 0.176 },
-  { name: "Rocket", ton: 0.352 },
-  { name: "Ring", ton: 0.705 }].map(g => ({ ...g, stars: Math.round(g.ton * TON_TO_STARS) }));
+let gifts = [
+  {name:"Bear",ton:0.105},{name:"Heart",ton:0.105},{name:"Rose",ton:0.176},{name:"Rocket",ton:0.352},{name:"Ring",ton:0.705},
+  {name:"Desk Calendar",ton:1.5},{name:"B-Day Candle",ton:1.61},{name:"Lol Pop",ton:1.67},{name:"Snake Box",ton:1.72},
+  {name:"Xmas Stocking",ton:1.77},{name:"Whip Cupcake",ton:1.8},{name:"Candy Cane",ton:1.89},{name:"Homemade Cake",ton:1.91},
+  {name:"Pet Snake",ton:1.93},{name:"Holiday Drink",ton:1.93},{name:"Jester Hat",ton:2},{name:"Big Year",ton:2.02},
+  {name:"Ginger Cookie",ton:2.05},{name:"Party Sparkler",ton:2.06},{name:"Winter Wreath",ton:2.06},{name:"Hypno Lollipop",ton:2.09},
+  {name:"Tama Gadget",ton:2.11},{name:"Cookie Heart",ton:2.12},{name:"Jingle Bells",ton:2.12},{name:"Snoop Dogg",ton:2.15},
+  {name:"Stellar Rocket",ton:2.18},{name:"Spiced Wine",ton:2.19},{name:"Fresh Socks",ton:2.2},{name:"Swag Bag",ton:2.4},
+  {name:"Jack-in-the-Box",ton:2.4},{name:"Moon Pendant",ton:2.5},{name:"Star Notepad",ton:2.5},{name:"Easter Egg",ton:2.61},
+  {name:"Santa Hat",ton:2.68},{name:"Restless Jar",ton:2.72},{name:"Snow Globe",ton:2.89},{name:"Joyful Bundle",ton:3.07},
+  {name:"Hex Pot",ton:3.07},{name:"Lush Bouquet",ton:3.07},{name:"Witch Hat",ton:3.14},{name:"Light Sword",ton:3.3},
+  {name:"Bunny Muffin",ton:3.46},{name:"Bow Tie",ton:3.6},{name:"Jelly Bunny",ton:3.75},{name:"Input Key",ton:3.76},
+  {name:"Spy Agaric",ton:3.88},{name:"Snow Mittens",ton:3.9},{name:"Eternal Candle",ton:3.92},{name:"Berry Box",ton:3.98},
+  {name:"Evil Eye",ton:4.4},{name:"Jolly Chimp",ton:4.51},{name:"Valentine Box",ton:4.61},{name:"Sakura Flower",ton:5.21},
+  {name:"Hanging Star",ton:5.3},{name:"Snoop Cigar",ton:5.89},{name:"Sleigh Bell",ton:6.6},{name:"Love Candle",ton:7.15},
+  {name:"Sky Stilettos",ton:7.32},{name:"Record Player",ton:8},{name:"Crystal Ball",ton:8.24},{name:"Skull Flower",ton:8.48},
+  {name:"Top Hat",ton:8.57},{name:"Trapped Heart",ton:8.67},{name:"Flying Broom",ton:9.77},{name:"Love Potion",ton:10.38},
+  {name:"Cupid Charm",ton:11.01},{name:"Ionic Dryer",ton:11.4},{name:"Eternal Rose",ton:15.17},{name:"Diamond Ring",ton:18},
+  {name:"Mad Pumpkin",ton:18.27},{name:"Voodoo Doll",ton:18.88},{name:"Toy Bear",ton:24.11},{name:"Vintage Cigar",ton:25},
+  {name:"Low Rider",ton:26.11},{name:"Neko Helmet",ton:27},{name:"Signet Ring",ton:27.78},{name:"Electric Skull",ton:30.4},
+  {name:"Kissed Frog",ton:31.25},{name:"Sharp Tongue",ton:39.76},{name:"Swiss Watch",ton:40},{name:"Genie Lamp",ton:47},
+  {name:"Westside Sign",ton:53.6},{name:"Bonded Ring",ton:53.97},{name:"Scared Cat",ton:57.69},{name:"Gem Signet",ton:66.89},
+  {name:"Magic Potion",ton:73.9},{name:"Perfume Bottle",ton:80.62},{name:"Ion Gem",ton:82.38},{name:"Loot Bag",ton:93},
+  {name:"Mini Oscar",ton:93.19},{name:"Artisan Brick",ton:110.24},{name:"Astral Shard",ton:119.13},{name:"Nail Bracelet",ton:124.8},
+  {name:"Mighty Arm",ton:199.99},{name:"Heroic Helmet",ton:255},{name:"Precious Peach",ton:389.5},{name:"Durov's Cap",ton:870},
+  {name:"Heart Locket",ton:1210},{name:"Plush Pepe",ton:4930}
+];
+gifts = gifts.map(g=>({...g,stars:Math.round(g.ton*TON_TO_STARS)})).sort((a,b)=>a.stars-b.stars);
 
-let stars=10000,inventory=gifts.slice(),selectedComponents=Array(6).fill(null),activeCardIndex=null;
+let stars = 10000;
+let inventory = gifts.slice();
+let selectedComponents = Array(6).fill(null);
+let activeCardIndex = null;
 
-function rarityColor(value){
-  if(value<150)return"#9cc7f7";
-  if(value<500)return"#57a5ff";
-  if(value<1000)return"#0066ff";
-  if(value<4000)return"#b600ff";
-  if(value<8000)return"#ff00aa";
+/* === Функции редкости === */
+function rarityColor(v){
+  if(v<=100)return"#b9faff"; // ультра лёгкая
+  if(v<150)return"#9cc7f7";
+  if(v<500)return"#57a5ff";
+  if(v<1000)return"#0066ff";
+  if(v<4000)return"#b600ff";
+  if(v<8000)return"#ff00aa";
   return"#ff0000";
 }
-function rarityClass(value){
-  if(value<150)return"rare0";
-  if(value<500)return"rare1";
-  if(value<1000)return"rare2";
-  if(value<4000)return"rare3";
-  if(value<8000)return"rare4";
-  return"rare5";
+function rarityClass(v){
+  if(v<=100)return"rare0";
+  if(v<150)return"rare1";
+  if(v<500)return"rare2";
+  if(v<1000)return"rare3";
+  if(v<4000)return"rare4";
+  if(v<8000)return"rare5";
+  return"rare6";
 }
 
-// ===== UI =====
-const forgeCards=document.querySelectorAll(".forge-card");
-const lineCanvas=document.getElementById("lineCanvas");
-const ctx=lineCanvas.getContext("2d");
-const forgeButton=document.getElementById("forgeButton");
-const forgeResult=document.getElementById("forgeResult");
+/* === Обновление баланса === */
+function updateBalance(){document.getElementById("starBalance").textContent=`⭐ ${stars.toLocaleString()}`}
 
-function renderStars(){document.getElementById("starBalance").textContent=`⭐ ${Math.floor(stars).toLocaleString()}`;}
+/* === Модальное окно === */
+const modal=document.getElementById("modal");
+const modalItems=document.getElementById("modalItems");
+const searchInput=document.getElementById("searchInput");
+const closeModal=document.getElementById("closeModal");
+closeModal.onclick=()=>modal.style.display="none";
+
+/* === Отображение подарков === */
 function renderInventory(){
-  const c=document.getElementById("inventoryItems");c.innerHTML="";
-  inventory.forEach(item=>{
-    const val=Math.round(item.ton*TON_TO_STARS);
-    const div=document.createElement("div");
-    div.className=`inv-item ${rarityClass(val)}`;
-    div.innerHTML=`${item.name}<br>${val}⭐`;
-    c.appendChild(div);
+  const cont=document.getElementById("inventoryItems");
+  cont.innerHTML="";
+  inventory.forEach(g=>{
+    const d=document.createElement("div");
+    d.className=`inv-item ${rarityClass(g.stars)}`;
+    d.innerHTML=`<div>${g.name}</div><div>⭐${g.stars}</div>`;
+    cont.appendChild(d);
   });
 }
-function renderForgeCards(){
-  forgeCards.forEach((c,i)=>c.textContent=selectedComponents[i]?selectedComponents[i].name:(i==2?"⭐":i==5?"🧩":"+"));
-  drawLines();
-}
+renderInventory();
+updateBalance();
 
-// === Lines ===
-let flicker=0;
-function drawLines(){
-  ctx.clearRect(0,0,lineCanvas.width,lineCanvas.height);
-  const rect=lineCanvas.getBoundingClientRect();
-  const pos=[];
-  forgeCards.forEach(card=>{
-    const r=card.getBoundingClientRect();
-    if(card.textContent!=="+"&&card.textContent!=="⭐"&&card.textContent!=="🧩"){
-      pos.push({x:r.left-rect.left+r.width/2,y:r.top-rect.top+r.height/2});
-    }
-  });
-  const n=pos.length;if(n<2)return;
-  const period=n===2?1000:n===3?750:n===4?600:n===5?500:333;
-  flicker=(flicker+1)%period;
-  const alpha=0.5+0.5*Math.sin(flicker/period*2*Math.PI);
-  ctx.lineWidth=2+n/2;ctx.strokeStyle=`rgba(255,123,0,${0.4+alpha*0.6})`;
-  ctx.shadowColor="orange";ctx.shadowBlur=8;
-  ctx.beginPath();
-  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){ctx.moveTo(pos[i].x,pos[i].y);ctx.lineTo(pos[j].x,pos[j].y);}
-  ctx.stroke();
-}
-setInterval(drawLines,60);
-window.onresize=drawLines;
-
-// === Modal ===
-const modal=document.getElementById("modal"),modalItems=document.getElementById("modalItems"),searchInput=document.getElementById("searchInput");
-function openModal(){modal.style.display="flex";renderModalItems();}
-function renderModalItems(){
-  modalItems.innerHTML="";
-  const filter=searchInput.value.toLowerCase();
-  inventory.forEach((item,idx)=>{
-    if(item.name.toLowerCase().includes(filter)){
-      const div=document.createElement("div");
-      const val=Math.round(item.ton*TON_TO_STARS);
-      div.className="modal-item";
-      div.textContent=`${item.name} (${val}⭐)`;
-      div.onclick=()=>{
-        selectedComponents[activeCardIndex]=item;
-        inventory.splice(idx,1);
-        modal.style.display="none";
-        renderInventory();renderForgeCards();
-      };
-      modalItems.appendChild(div);
-    }
-  });
-}
-searchInput.oninput=renderModalItems;
-document.getElementById("closeModal").onclick=()=>modal.style.display="none";
-forgeCards.forEach((card,i)=>{
-  card.onclick=()=>{
-    activeCardIndex=i;
-    if(i===2){
-      const amt=parseInt(prompt("Введите количество звёзд (1–1000):","100"));
-      if(!isNaN(amt)&&amt>0)selectedComponents[i]={name:`⭐ ${amt}`,ton:amt/TON_TO_STARS};
-      renderForgeCards();
-    }else openModal();
-  };
-});
-
-// === Roulette ===
-const rouletteOverlay=document.getElementById("rouletteOverlay");
-const rouletteLine=document.getElementById("rouletteLine");
-const rouletteResultText=document.getElementById("rouletteResult");
-function startRoulette(finalGift){
-  rouletteOverlay.style.display="flex";
-  setTimeout(()=>rouletteOverlay.classList.add("visible"),10);
-  rouletteLine.innerHTML="";
-  const seq=[];
-  for(let i=0;i<40;i++){seq.push(gifts[Math.floor(Math.random()*gifts.length)]);}
-  seq[seq.length-6]=finalGift;
-  seq.forEach(g=>{
-    const div=document.createElement("div");
-    div.className="roulette-item";
-    div.innerHTML=`${g.name}`;
-    const underline=document.createElement("div");
-    underline.className="roulette-underline";
-    underline.style.background=rarityColor(Math.round(g.ton*TON_TO_STARS));
-    div.appendChild(underline);
-    rouletteLine.appendChild(div);
-  });
-  const itemWidth=155;
-  const stopIndex=seq.length-6;
-  rouletteLine.style.left="0px";
-  setTimeout(()=>{
-    rouletteLine.style.transition="left 4s cubic-bezier(0.05,0.82,0.24,1)";
-    rouletteLine.style.left=`-${stopIndex*itemWidth - window.innerWidth/2 + itemWidth/2}px`;
-  },100);
-  setTimeout(()=>{
-    rouletteResultText.textContent=`🎁 ${finalGift.name} получен!`;
-    rouletteResultText.style.opacity=1;
-    inventory.push(finalGift);renderInventory();renderStars();
-    setTimeout(()=>{
-      rouletteOverlay.classList.remove("visible");
-      setTimeout(()=>{rouletteOverlay.style.display="none";rouletteResultText.style.opacity=0;rouletteResultText.textContent="";},800);
-    },2000);
-  },4100);
-}
-
-// === Forge ===
-forgeButton.onclick=()=>{
-  const comps=selectedComponents.filter(Boolean);
-  if(comps.length<2)return forgeResult.textContent="⚠️ Нужно минимум 2 компонента!";
-  forgeButton.disabled=true;forgeButton.textContent="⛏ Ковка...";
-  const success=Math.random()<0.7;
-  let gift;
-  if(success){
-    const vals=comps.map(c=>c.ton*TON_TO_STARS);
-    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-    const pool=gifts.filter(g=>g.ton*TON_TO_STARS>avg*0.8&&g.ton*TON_TO_STARS<avg*1.2);
-    gift=pool.length?pool[Math.floor(Math.random()*pool.length)]:gifts[Math.floor(Math.random()*gifts.length)];
-  }else gift=gifts[Math.floor(Math.random()*gifts.length)];
-  startRoulette(gift);
-  selectedComponents=Array(6).fill(null);renderForgeCards();
-  setTimeout(()=>{forgeButton.disabled=false;forgeButton.textContent="Ковать!";},4500);
+/* === Навигация === */
+document.getElementById("navForge").onclick=()=>{
+  document.getElementById("forgeTab").classList.remove("hidden");
+  document.getElementById("inventoryTab").classList.add("hidden");
+  document.getElementById("navForge").classList.add("active");
+  document.getElementById("navInventory").classList.remove("active");
+};
+document.getElementById("navInventory").onclick=()=>{
+  document.getElementById("forgeTab").classList.add("hidden");
+  document.getElementById("inventoryTab").classList.remove("hidden");
+  document.getElementById("navInventory").classList.add("active");
+  document.getElementById("navForge").classList.remove("active");
 };
 
-// === Навигация ===
-document.getElementById("navForge").onclick=()=>{document.getElementById("forgeTab").classList.remove("hidden");document.getElementById("inventoryTab").classList.add("hidden");document.getElementById("navForge").classList.add("active");document.getElementById("navInventory").classList.remove("active");};
-document.getElementById("navInventory").onclick=()=>{document.getElementById("forgeTab").classList.add("hidden");document.getElementById("inventoryTab").classList.remove("hidden");document.getElementById("navForge").classList.remove("active");document.getElementById("navInventory").classList.add("active");};
+/* === Ковка === */
+const cards=document.querySelectorAll(".forge-card");
+cards.forEach((card,i)=>{
+  card.addEventListener("click",()=>{
+    activeCardIndex=i;
+    openModal();
+  });
+});
+function openModal(){
+  modal.style.display="flex";
+  renderModalItems("");
+  searchInput.value="";
+}
+function renderModalItems(filter){
+  modalItems.innerHTML="";
+  gifts.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()))
+  .forEach(g=>{
+    const d=document.createElement("div");
+    d.className="modal-item";
+    d.style.borderColor=rarityColor(g.stars);
+    d.innerHTML=`${g.name} - ⭐${g.stars}`;
+    d.onclick=()=>{
+      selectedComponents[activeCardIndex]=g;
+      cards[activeCardIndex].textContent=g.name;
+      cards[activeCardIndex].classList.add("selected");
+      modal.style.display="none";
+      drawLines();
+    };
+    modalItems.appendChild(d);
+  });
+}
+searchInput.oninput=e=>renderModalItems(e.target.value);
 
-// === Init ===
-renderInventory();renderStars();renderForgeCards();
+/* === Отрисовка линий === */
+const canvas=document.getElementById("lineCanvas");
+const ctx=canvas.getContext("2d");
+function drawLines(){
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width;
+  canvas.height=rect.height;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const selected=[];
+  cards.forEach((c,i)=>{
+    if(selectedComponents[i]){
+      const r=c.getBoundingClientRect();
+      const cx=r.left+ r.width/2 - rect.left;
+      const cy=r.top+ r.height/2 - rect.top;
+      selected.push({x:cx,y:cy});
+    }
+  });
+  if(selected.length<2)return;
+  ctx.strokeStyle="#ff7b00aa";
+  ctx.lineWidth=2;
+  for(let i=0;i<selected.length;i++){
+    for(let j=i+1;j<selected.length;j++){
+      ctx.beginPath();
+      ctx.moveTo(selected[i].x,selected[i].y);
+      ctx.lineTo(selected[j].x,selected[j].y);
+      ctx.stroke();
+    }
+  }
+}
+
+/* === Ковка результата === */
+document.getElementById("forgeButton").onclick=()=>{
+  const used=selectedComponents.filter(x=>x);
+  if(used.length<2)return alert("Выбери хотя бы 2 подарка!");
+  let total=used.reduce((a,b)=>a+b.stars,0);
+  let avg=total/used.length;
+  let variance=used.reduce((a,b)=>a+(b.stars-avg)**2,0)/used.length;
+  let bonus=Math.sqrt(variance)/2;
+  let minVal=Math.max(50,avg/2);
+  let maxVal=avg+bonus*2.5;
+  startRoulette(minVal,maxVal);
+};
+
+/* === Рулетка === */
+const rouletteOverlay=document.getElementById("rouletteOverlay");
+const rouletteLine=document.getElementById("rouletteLine");
+const rouletteResult=document.getElementById("rouletteResult");
+function startRoulette(minVal,maxVal){
+  rouletteOverlay.style.display="flex";
+  setTimeout(()=>rouletteOverlay.classList.add("visible"),10);
+  rouletteResult.style.opacity=0;
+  let reel=[];
+  for(let i=0;i<40;i++){
+    const g=gifts[Math.floor(Math.random()*gifts.length)];
+    reel.push(g);
+  }
+  rouletteLine.innerHTML="";
+  reel.forEach(g=>{
+    const d=document.createElement("div");
+    d.className="roulette-item";
+    const underline=document.createElement("div");
+    underline.className="roulette-underline";
+    underline.style.background=rarityColor(g.stars);
+    d.appendChild(underline);
+    d.innerHTML+=`<div>${g.name}</div><div>⭐${g.stars}</div>`;
+    rouletteLine.appendChild(d);
+  });
+  const target=gifts.filter(g=>g.stars>=minVal && g.stars<=maxVal);
+  const prize=target.length?target[Math.floor(Math.random()*target.length)]:gifts[Math.floor(Math.random()*gifts.length)];
+  const targetIndex=Math.floor(Math.random()*reel.length*0.7)+reel.length*0.15;
+  const offset=-targetIndex*155+rouletteLine.parentElement.offsetWidth/2-70;
+  rouletteLine.style.left="0px";
+  setTimeout(()=>{rouletteLine.style.left=`${offset}px`;},50);
+  setTimeout(()=>{
+    rouletteResult.textContent=`Выкован: ${prize.name} ⭐${prize.stars}`;
+    rouletteResult.style.opacity=1;
+    inventory.push(prize);
+    renderInventory();
+    updateBalance();
+    setTimeout(()=>{
+      rouletteOverlay.classList.remove("visible");
+      setTimeout(()=>rouletteOverlay.style.display="none",600);
+    },3000);
+  },4000);
+}
 </script>
 </body>
 </html>
