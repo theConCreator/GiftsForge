@@ -107,7 +107,7 @@ main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: 
 #rouletteOverlay.visible #rouletteContainer { opacity: 1; transform: scale(1); }
 #rouletteLine {
   display: flex; gap: 15px; position: absolute; left: 0; top: 0; height: 100%;
-  align-items: center; transition: left 4s cubic-bezier(0.05,0.82,0.24,1);
+  align-items: center; transition: left 2.5s cubic-bezier(0.05,0.82,0.24,1);
 }
 .roulette-item {
   width: 140px; height: 140px; background: #222; border-radius: 14px;
@@ -291,8 +291,6 @@ let gifts = [
   { name: "Rocket", ton: 0.352 },
   { name: "Ring", ton: 0.705 }
 ];
-/* (для краткости в этом примере сокращено, в реальном коде вставь весь список gifts из прошлой версии) */
-
 gifts = gifts.map(g=>({...g,stars:Math.round(g.ton*TON_TO_STARS)})).sort((a,b)=>a.stars-b.stars);
 
 let stars = 10000;
@@ -402,27 +400,36 @@ document.getElementById("forgeButton").onclick=()=>{
   const used=selectedComponents.filter(x=>x);
   if(used.length<2)return alert("Выбери хотя бы 2 подарка!");
   let total=used.reduce((a,b)=>a+b.stars,0);
-  let avg=total/used.length;
-  let variance=used.reduce((a,b)=>a+(b.stars-avg)**2,0)/used.length;
-  let bonus=Math.sqrt(variance)/2;
-  let minVal=Math.max(50,avg/2);
-  let maxVal=avg+bonus*2.5;
-  const possible=gifts.filter(g=>g.stars>=minVal && g.stars<=maxVal);
-  const prize=possible.length?possible[Math.floor(Math.random()*possible.length)]:gifts[Math.floor(Math.random()*gifts.length)];
-  startRoulette(prize);
+  const targetValue=total*0.95;
+  const possible=gifts.map(g=>{
+    const diff=Math.abs(g.stars-targetValue);
+    let weight=1/(diff/targetValue+0.5);
+    return{gift:g,weight};
+  });
+  const sumW=possible.reduce((a,b)=>a+b.weight,0);
+  let rnd=Math.random()*sumW;
+  for(const p of possible){rnd-=p.weight;if(rnd<=0){prize=p.gift;break;}}
+  const prize=prize||possible[0].gift;
+  startRoulette(prize,total);
 };
 
 const rouletteOverlay=document.getElementById("rouletteOverlay");
 const rouletteLine=document.getElementById("rouletteLine");
 const rouletteResult=document.getElementById("rouletteResult");
 
-function startRoulette(prize){
+function startRoulette(prize,total){
   rouletteOverlay.style.display="flex"; setTimeout(()=>rouletteOverlay.classList.add("visible"),10);
   rouletteResult.style.opacity=0;
   let reel=[];
+  const weighted=gifts.map(g=>{
+    const diff=Math.abs(g.stars-(total*0.95));
+    let weight=Math.max(0.1,1/(diff/total+0.3));
+    return{gift:g,weight};
+  });
   for(let i=0;i<40;i++){
-    const g=gifts[Math.floor(Math.random()*gifts.length)];
-    reel.push(g);
+    const sum=weighted.reduce((a,b)=>a+b.weight,0);
+    let rnd=Math.random()*sum;
+    for(const w of weighted){rnd-=w.weight;if(rnd<=0){reel.push(w.gift);break;}}
   }
   const insertIndex=20;
   reel[insertIndex]=prize;
@@ -446,12 +453,12 @@ function startRoulette(prize){
     rouletteResult.textContent=`Ты выкован: ${prize.name} ⭐${prize.stars}`;
     rouletteResult.style.opacity=1;
     inventory.push(prize);
-    renderInventory(); updateBalance();
+    renderInventory();
     setTimeout(()=>{
       rouletteOverlay.classList.remove("visible");
-      setTimeout(()=>rouletteOverlay.style.display="none",600);
-    },3000);
-  },4000);
+      setTimeout(()=>{rouletteOverlay.style.display="none";},1000);
+    },2000);
+  },2500);
 }
 </script>
 </body>
