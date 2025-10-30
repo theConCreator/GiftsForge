@@ -408,8 +408,8 @@ document.getElementById("forgeButton").onclick=()=>{
   });
   const sumW=possible.reduce((a,b)=>a+b.weight,0);
   let rnd=Math.random()*sumW;
+  let prize=possible[0].gift;
   for(const p of possible){rnd-=p.weight;if(rnd<=0){prize=p.gift;break;}}
-  const prize=prize||possible[0].gift;
   startRoulette(prize,total);
 };
 
@@ -450,7 +450,7 @@ function startRoulette(prize,total){
   rouletteLine.style.left="0px";
   setTimeout(()=>{rouletteLine.style.left=`${offset}px`;},50);
   setTimeout(()=>{
-    rouletteResult.textContent=`Ты выкован: ${prize.name} ⭐${prize.stars}`;
+    rouletteResult.textContent=`Выкован: ${prize.name} ⭐${prize.stars}`;
     rouletteResult.style.opacity=1;
     inventory.push(prize);
     renderInventory();
